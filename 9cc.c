@@ -19,7 +19,7 @@ struct Token{
   char *str;      // トークン文字列
 };
 
-Token *token;
+Token *token;     // 現在のトークン
 char *user_input; // 入力プログラム
 
 // エラー用関数(使い方はprintfと同じ)
@@ -84,7 +84,6 @@ Token *tokenize(){
   Token head;
   head.next = NULL;
   Token *cur = &head;
-
 
   while(*p){
 
