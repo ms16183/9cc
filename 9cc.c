@@ -20,11 +20,18 @@ struct Token{
 };
 
 Token *token;
+char *user_input; // 入力プログラム
 
 // エラー用関数(使い方はprintfと同じ)
-void error(char *fmt, ...){
+void error(char *loc, char *fmt, ...){
   va_list ap;
   va_start(ap, fmt);
+
+  int pos = loc - user_input;
+  fprintf(stderr, "%d\n", pos);
+  fprintf(stderr, "%s\n", user_input);
+  fprintf(stderr, "%*s", pos, "");  // pos個の空白を出力する．
+  fprintf(stderr, "^ ");            // 指摘箇所
   vfprintf(stderr, fmt, ap);
   fprintf(stderr, "\n");
   exit(1);
@@ -43,7 +50,7 @@ bool consume(char op){
 // consumeとの違いは，エラーを出すかどうかである．
 void expect(char op){
   if(token->kind != TK_RESERVED || token->str[0] != op){
-    printf("'%c'ではありません．\n", op);
+    error(token->str, "'%c'ではありません．\n", op);
   }
   token = token->next;
 }
@@ -51,7 +58,7 @@ void expect(char op){
 // 次のトークンが数字であればその数値を返す．
 int expect_number(){
   if(token->kind != TK_NUM){
-    error("数ではありません");
+    error(token->str, "数ではありません．");
   }
   int val = token->val;
   token = token->next;
@@ -72,10 +79,12 @@ Token *new_token(TokenKind kind, Token *cur, char *str){
   return new;
 }
 
-Token *tokenize(char *p){
+Token *tokenize(){
+  char *p = user_input;
   Token head;
   head.next = NULL;
   Token *cur = &head;
+
 
   while(*p){
 
@@ -96,7 +105,7 @@ Token *tokenize(char *p){
       continue;
     }
 
-    error("トークナイズできない文字です．");
+    error(p, "トークナイズできない文字です．");
   }
 
   new_token(TK_EOF, cur, p);
@@ -110,7 +119,8 @@ int main(int argc, char **argv){
     return 1;
   }
 
-  token = tokenize(argv[1]);
+  user_input = argv[1];
+  token = tokenize();
 
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
@@ -129,15 +139,17 @@ int main(int argc, char **argv){
     }
 
     // +じゃなければ当然-だよね?
+    expect('-');
+    printf("  sub rax, %d\n", expect_number());
+
     /*
+    // このような書き方もできる．
     if(consume('-')){
       printf("  sub rax, %d\n", expect_number());
       continue;
     }
-    error("数ではありません．");
+    error(token->str, "数ではありません．");
     */
-    expect('-');
-    printf("  sub rax, %d\n", expect_number());
   }
 
   printf("  ret\n");
