@@ -8,6 +8,8 @@
 - WSL Ubuntu 18.04 LTS
 - gcc (Ubuntu 7.4.0-1ubuntu1~18.04.1) 7.4.0
 
+# 学習事項
+
 ## BNF記法による数式生成
 
 ```
