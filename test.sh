@@ -17,17 +17,26 @@ try() {
   fi
 }
 
+msg(){
+  input="$1"
+
+  # underscore;Cyan
+  echo -e "\n\033[4;36m$input\033[0;37m"
+}
+
+msg "加算，減算のテスト"
 try 100 "20-10+120-5-5-30+10"
 try 24 "   5 - 2+4  +3 -1+4 + 12-     1"
 try 1 " 2+   3 - 3-1  "
 
-# Error
+msg "エラー出力のテスト"
 ./9cc "1 +   2 --1 "
 ./9cc "1+ hoge- 3"
 
+msg "四則演算のテスト"
 try 6 "2*3"
 try 2 "1+5/3"
 try 3 " ( 10* 2 +   1 -3) / 6"
 try 2 "20 *2/ (4*(2+3))"
 
-echo OK
+echo -e "\nOK"
