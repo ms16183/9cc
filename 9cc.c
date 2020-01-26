@@ -152,6 +152,7 @@ Node *new_node_num(int val){
 // BNF記法による数式の構文解析
 Node *expr();
 Node *mul();
+Node *unary();
 Node *primary();
 
 Node *expr(){
@@ -171,19 +172,31 @@ Node *expr(){
 }
 
 Node *mul(){
-  Node *node = primary();
+  Node *node = unary();
 
   while(true){
     if(consume('*')){
-      node = new_node(ND_MUL, node, primary());
+      node = new_node(ND_MUL, node, unary());
     }
     else if(consume('/')){
-      node = new_node(ND_DIV, node, primary());
+      node = new_node(ND_DIV, node, unary());
     }
     else{
       return node;
     }
   }
+}
+
+Node *unary(){
+  if(consume('+')){
+    return primary();
+  }
+  if(consume('-')){
+    // -a = 0 - a
+    Node *zero = new_node_num(0);
+    return new_node(ND_SUB, zero, primary());
+  }
+  return primary();
 }
 
 Node *primary(){
@@ -196,6 +209,7 @@ Node *primary(){
 
   return new_node_num(expect_number());
 }
+
 
 void gen(Node *node){
 
