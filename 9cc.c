@@ -6,6 +6,22 @@
 #include <stdarg.h>
 
 typedef enum{
+  ND_ADD, // 四則演算
+  ND_SUB,
+  ND_MUL,
+  ND_DIV,
+  ND_NUM, // 数値
+} NodeKind;
+
+typedef struct Node Node;
+struct Node{
+  NodeKind kind; // ノードの種類
+  Node *lhs;     // 左辺
+  Node *rhs;     // 右辺
+  int val;       // kind=ND_NUMの時の数値
+};
+
+typedef enum{
   TK_RESERVED, // 記号
   TK_NUM,      // 整数トークン
   TK_EOF,      // EOFトークン
@@ -21,6 +37,7 @@ struct Token{
 
 Token *token;     // 現在のトークン
 char *user_input; // 入力プログラム
+Node *node;       // 計算ノード
 
 // エラー用関数(使い方はprintfと同じ)
 void error(char *loc, char *fmt, ...){
@@ -93,11 +110,15 @@ Token *tokenize(){
       continue;
     }
 
-    if(*p == '+' || *p == '-'){
+    // 記号
+    if(*p == '+' || *p == '-' ||
+       *p == '*' || *p == '/' ||
+       *p == '(' || *p == ')'){
       cur = new_token(TK_RESERVED, cur, p++);
       continue;
     }
 
+    // 数値
     if(isdigit(*p)){
       cur = new_token(TK_NUM, cur, p);
       cur->val = strtol(p, &p, 10);
@@ -111,6 +132,118 @@ Token *tokenize(){
   return head.next;
 }
 
+// 次のノードを生成する．
+Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
+  Node *new = (Node*)calloc(1, sizeof(Node));
+  new->kind = kind;
+  new->lhs = lhs;
+  new->rhs = rhs;
+  return new;
+}
+
+// 次の数値ノードを生成する．
+Node *new_node_num(int val){
+  Node *new = (Node*)calloc(1, sizeof(Node));
+  new->kind = ND_NUM;
+  new->val = val;
+  return new;
+}
+
+/* BNF記法による数式の生成
+ * <数式1> ::= <数式2> | <数式2> <+|-> <数式2>
+ * <数式2> ::= <数式3> | <数式3> <*|/> <数式3>
+ * <数式3> ::= <数字>  | ( <数式1> )
+ */
+
+/* 数値が浮動小数点の場合，浮動小数点は
+ * <浮動小数点定義> ::= [<符号>]<小数点定数>[<指数部>]
+ *                     |[<符号>]<数字列><指数部>
+ *                   <小数点定数> ::= [<数字列>]<.><数字列>|<数字列><.>
+ *                   <指数部> ::=<E>[<符号>]<数字列>
+ *                   <数字列> ::=<数字>|<数字列><数字>
+ *                   <数字> ::= 0|1|2|3|4|5|6|7|8|9
+ *                   <符号> ::= +|-
+ */
+
+Node *expr();
+Node *mul();
+Node *primary();
+
+Node *expr(){
+  Node *node = mul();
+
+  while(true){
+    if(consume('+')){
+      node = new_node(ND_ADD, node, mul());
+    }
+    else if(consume('-')){
+      node = new_node(ND_SUB, node, mul());
+    }
+    else{
+      return node;
+    }
+  }
+}
+
+Node *mul(){
+  Node *node = primary();
+
+  while(true){
+    if(consume('*')){
+      node = new_node(ND_MUL, node, primary());
+    }
+    else if(consume('/')){
+      node = new_node(ND_DIV, node, primary());
+    }
+    else{
+      return node;
+    }
+  }
+}
+
+Node *primary(){
+
+  if(consume('(')){
+    Node *node = expr();
+    expect(')');
+    return node;
+  }
+
+  return new_node_num(expect_number());
+}
+
+void gen(Node *node){
+
+  if(node->kind == ND_NUM){
+    printf("  push %d\n", node->val);
+    return;
+  }
+
+  gen(node->lhs);
+  gen(node->rhs);
+
+  printf("  pop rdi\n");
+  printf("  pop rax\n");
+
+  if(node->kind == ND_ADD){
+    printf("  add rax, rdi\n");
+  }
+  else if(node->kind == ND_SUB){
+    printf("  sub rax, rdi\n");
+  }
+  else if(node->kind == ND_MUL){
+    printf("  imul rax, rdi\n");
+  }
+  else if(node->kind == ND_DIV){
+    printf("  cqo\n");      // raxの64bitを128bitに伸ばしている．
+    printf("  idiv rdi\n");
+  }
+  else{
+  }
+
+  printf("  push rax\n");
+}
+
 int main(int argc, char **argv){
 
   if(argc != 2){
@@ -118,40 +251,24 @@ int main(int argc, char **argv){
     return 1;
   }
 
+  // トークナイズする．
   user_input = argv[1];
   token = tokenize();
+
+  // 四則演算(+-*/())を解析して計算する．
+  node = expr();
 
   printf(".intel_syntax noprefix\n");
   printf(".global main\n");
   printf("\n");
   printf("main:\n");
 
-  // 最初は数値である．
-  printf("  mov rax, %d\n", expect_number());
+  // 構文解析
+  gen(node);
 
-  // '+ 数値'或いは'- 数値'というトークンを読み取る．
-  while(!at_eof()){
-    // +かな?
-    if(consume('+')){
-      printf("  add rax, %d\n", expect_number());
-      continue;
-    }
-
-    // +じゃなければ当然-だよね?
-    expect('-');
-    printf("  sub rax, %d\n", expect_number());
-
-    /*
-    // このような書き方もできる．
-    if(consume('-')){
-      printf("  sub rax, %d\n", expect_number());
-      continue;
-    }
-    error(token->str, "数ではありません．");
-    */
-  }
-
-  printf("  ret\n");
+  // スタックトップにある，数式の計算結果をraxにpopして出力とする．
+  printf("  pop rax\n");
+  printf("  ret \n");
   return 0;
 }
 
