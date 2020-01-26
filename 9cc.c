@@ -6,10 +6,10 @@
 #include <stdarg.h>
 
 typedef enum{
-  ND_ADD, // 四則演算
-  ND_SUB,
-  ND_MUL,
-  ND_DIV,
+  ND_ADD, // +
+  ND_SUB, // -
+  ND_MUL, // *
+  ND_DIV, // /
   ND_NUM, // 数値
 } NodeKind;
 
@@ -36,7 +36,7 @@ struct Token{
 };
 
 Token *token;     // 現在のトークン
-char *user_input; // 入力プログラム
+char *user_input; // 入力プログラム(argv)
 Node *node;       // 計算ノード
 
 // エラー用関数(使い方はprintfと同じ)
@@ -54,7 +54,11 @@ void error(char *loc, char *fmt, ...){
   exit(1);
 }
 
-// 次のトークンが期待される記号であればtrue
+/*
+ * トークナイザ
+ */
+
+// 次のトークンが期待される記号であれば真を返す．
 bool consume(char op){
   if(token->kind != TK_RESERVED || token->str[0] != op){
     return false;
@@ -82,7 +86,7 @@ int expect_number(){
   return val;
 }
 
-// トークンがこれ以上続かないならtrue
+// トークンがこれ以上続かないなら真を返す．
 bool at_eof(){
   return token->kind == TK_EOF;
 }
@@ -131,6 +135,10 @@ Token *tokenize(){
   new_token(TK_EOF, cur, p);
   return head.next;
 }
+
+/*
+ * 構文解析パーサ
+ */
 
 // 次のノードを生成する．
 Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
@@ -236,8 +244,6 @@ void gen(Node *node){
   else if(node->kind == ND_DIV){
     printf("  cqo\n");      // raxの64bitを128bitに伸ばしている．
     printf("  idiv rdi\n");
-  }
-  else{
   }
 
   printf("  push rax\n");
