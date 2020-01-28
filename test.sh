@@ -17,6 +17,15 @@ try() {
   fi
 }
 
+out(){
+  input="$1"
+  ./9cc "$input" > tmp.s
+  gcc -o tmp tmp.s
+  ./tmp
+  ret="$?"
+  echo "$input -> $ret (This evalution don't checked.)"
+}
+
 msg(){
   # underscore;Cyan
   echo -e "\n\033[4;36m$1\033[0;37m"
@@ -68,5 +77,7 @@ try 0 "(1+1)<0"
 
 try 1 "1<2 == 3<4"
 try 1 "1>2 != 3<4"
+
+out "(2+10)*2==24"
 
 echo -e "\nOK"
