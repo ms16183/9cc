@@ -14,8 +14,6 @@ typedef enum{
   ND_NE,  // !=
   ND_LT,  // <
   ND_LE,  // <=
-  ND_GT,  // >  (使用しない．LTの時，両辺を入れ替えればよいからである．)
-  ND_GE,  // >= (使用しない．GEの時，両辺を入れ替えればよいからである．)
   ND_NUM, // 数値
 } NodeKind;
 
@@ -109,7 +107,7 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len){
 }
 
 // 入力されたプログラムの記号が正しいか確認する．
-bool check_symbol(char *p, char *q, int len){
+bool check_symbol(char *p, char *q){
   return !memcmp(p, q, strlen(q));
 }
 
@@ -127,53 +125,36 @@ Token *tokenize(){
       continue;
     }
 
-    // 記号
-    if(check_symbol(p, "+", 1) || check_symbol(p, "-", 1) ||
-       check_symbol(p, "*", 1) || check_symbol(p, "/", 1) ||
-       check_symbol(p, "(", 1) || check_symbol(p, ")", 1) ){
-      cur = new_token(TK_RESERVED, cur, p++, 1);
+    // 四則演算
+    if(check_symbol(p, "+") || check_symbol(p, "-") ||
+       check_symbol(p, "*") || check_symbol(p, "/") ||
+       check_symbol(p, "(") || check_symbol(p, ")") ){
+      cur = new_token(TK_RESERVED, cur, p, 1);
+      p++;
       continue;
     }
 
     // 比較演算子
-    if(check_symbol(p, "==", 2)){
+    if(check_symbol(p, "==") || check_symbol(p, "!=") ||
+       check_symbol(p, ">=") || check_symbol(p, "<=")){
         cur = new_token(TK_RESERVED, cur, p, 2);
-        p+=2;
+        p += 2;
         continue;
     }
-    if(check_symbol(p, "!=", 2)){
-        cur = new_token(TK_RESERVED, cur, p, 2);
-        p+=2;
-        continue;
-    }
-    if(check_symbol(p, ">=", 2)){
-        cur = new_token(TK_RESERVED, cur, p, 2);
-        p+=2;
-        continue;
-    }
-    if(check_symbol(p, "<=", 2)){
-        cur = new_token(TK_RESERVED, cur, p, 2);
-        p+=2;
-        continue;
-    }
-    if(check_symbol(p, ">", 1)){
-        cur = new_token(TK_RESERVED, cur, p++, 1);
-        continue;
-    }
-    if(check_symbol(p, "<", 1)){
-        cur = new_token(TK_RESERVED, cur, p++, 1);
+    if(check_symbol(p, ">") || check_symbol(p, "<")){
+        cur = new_token(TK_RESERVED, cur, p, 1);
+        p++;
         continue;
     }
 
     // 数値
     if(isdigit(*p)){
       cur = new_token(TK_NUM, cur, p, 0);
-      char *q = p;
       cur->val = strtol(p, &p, 10);
-      cur->len = p - q;
       continue;
     }
 
+    // それ以外
     error(p, "トークナイズできない文字です．");
   }
 
@@ -240,9 +221,11 @@ Node *relational(){
       node = new_node(ND_LT, node, add());
     }
     else if(consume(">=")){
+      // GEだが，左辺と右辺を入れ替えればLEと等価である．
       node = new_node(ND_LE, add(), node);
     }
     else if(consume(">")){
+      // GTだが，左辺と右辺を入れ替えればLTと等価である．
       node = new_node(ND_LT, add(), node);
     }
     else{
