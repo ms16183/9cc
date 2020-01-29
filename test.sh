@@ -1,6 +1,12 @@
 #! /bin/bash
 
+msg(){
+  # underscore;Cyan
+  echo -e "\n\033[4;36m$1\033[0;37m"
+}
+
 try() {
+
   expected="$1"
   input="$2"
 
@@ -23,13 +29,9 @@ out(){
   gcc -o tmp tmp.s
   ./tmp
   ret="$?"
-  echo "$input -> $ret (This evalution don't checked.)"
+  echo "$input -> $ret (This evalution is not checked.)"
 }
 
-msg(){
-  # underscore;Cyan
-  echo -e "\n\033[4;36m$1\033[0;37m"
-}
 
 msg "加算，減算のテスト"
 try 2 "1+1"

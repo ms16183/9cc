@@ -112,7 +112,9 @@ bool check_symbol(char *p, char *q){
 }
 
 Token *tokenize(){
+
   char *p = user_input;
+
   Token head;
   head.next = NULL;
   Token *cur = &head;
@@ -141,6 +143,7 @@ Token *tokenize(){
         p += 2;
         continue;
     }
+    // >=や<=と1文字目が被るので>=，<=より後に記述すること．
     if(check_symbol(p, ">") || check_symbol(p, "<")){
         cur = new_token(TK_RESERVED, cur, p, 1);
         p++;
@@ -289,16 +292,23 @@ Node *primary(){
   return new_node_num(expect_number());
 }
 
+void begin(){
+  printf(".intel_syntax noprefix\n");
+  printf(".global main\n");
+  printf("\n");
+  printf("main:\n");
+  return;
+}
 
-void gen(Node *node){
+void generate(Node *node){
 
   if(node->kind == ND_NUM){
     printf("  push %d\n", node->val);
     return;
   }
 
-  gen(node->lhs);
-  gen(node->rhs);
+  generate(node->lhs);
+  generate(node->rhs);
 
   printf("  pop rdi\n");
   printf("  pop rax\n");
@@ -306,32 +316,32 @@ void gen(Node *node){
   if(node->kind == ND_ADD){
     printf("  add rax, rdi\n");
   }
-  else if(node->kind == ND_SUB){
+  if(node->kind == ND_SUB){
     printf("  sub rax, rdi\n");
   }
-  else if(node->kind == ND_MUL){
+  if(node->kind == ND_MUL){
     printf("  imul rax, rdi\n");
   }
-  else if(node->kind == ND_DIV){
+  if(node->kind == ND_DIV){
     printf("  cqo\n");      // raxの64bitを128bitに伸ばしている．
     printf("  idiv rdi\n");
   }
-  else if(node->kind == ND_EQ){
+  if(node->kind == ND_EQ){
     printf("  cmp rax, rdi\n");
     printf("  sete al\n");
     printf("  movzb rax, al\n");
   }
-  else if(node->kind == ND_NE){
+  if(node->kind == ND_NE){
     printf("  cmp rax, rdi\n");
     printf("  setne al\n");
     printf("  movzb rax, al\n");
   }
-  else if(node->kind == ND_LT){
+  if(node->kind == ND_LT){
     printf("  cmp rax, rdi\n");
     printf("  setl al\n");
     printf("  movzb rax, al\n");
   }
-  else if(node->kind == ND_LE){
+  if(node->kind == ND_LE){
     printf("  cmp rax, rdi\n");
     printf("  setle al\n");
     printf("  movzb rax, al\n");
@@ -339,12 +349,27 @@ void gen(Node *node){
 
   // スタックトップに計算結果を置く．
   printf("  push rax\n");
+  return;
+}
+
+void end(){
+  // スタックトップにある，数式の計算結果をraxにpopして出力とする．
+  printf("  pop rax\n");
+  printf("  ret \n");
+  return;
+}
+
+void generator(Node *node){
+  begin();
+  generate(node);
+  end();
+  return;
 }
 
 int main(int argc, char **argv){
 
   if(argc != 2){
-    fprintf(stderr, "引数の個数が正しくありません．\n");
+    fprintf(stderr, "Usage: ./9cc code\n");
     return 1;
   }
 
@@ -355,17 +380,9 @@ int main(int argc, char **argv){
   // 四則演算(+-*/())を解析して計算する．
   node = expr();
 
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("\n");
-  printf("main:\n");
+  // アセンブリ生成(標準出力)
+  generator(node);
 
-  // 構文解析
-  gen(node);
-
-  // スタックトップにある，数式の計算結果をraxにpopして出力とする．
-  printf("  pop rax\n");
-  printf("  ret \n");
   return 0;
 }
 
