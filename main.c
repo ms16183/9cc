@@ -1,5 +1,9 @@
 #include "9cc.h"
 
+Token *token;     // トークン
+char *user_input; // 入力プログラム(argv)
+Node *node;       // 計算ノード
+
 int main(int argc, char **argv){
 
   if(argc != 2){

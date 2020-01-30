@@ -43,9 +43,9 @@ struct Token{
   int len;        // トークンの長さ
 };
 
-Token *token;     // 現在のトークン
-char *user_input; // 入力プログラム(argv)
-Node *node;       // 計算ノード
+extern Token *token;     // 現在のトークン
+extern char *user_input; // 入力プログラム(argv)
+extern Node *node;       // 計算ノード
 
 // エラー用関数(使い方はprintfと同じ)
 void error(char *loc, char *fmt, ...);
