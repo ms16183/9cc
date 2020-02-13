@@ -9,27 +9,8 @@
 #include <stdarg.h>
 
 typedef enum{
-  ND_ADD, // +
-  ND_SUB, // -
-  ND_MUL, // *
-  ND_DIV, // /
-  ND_EQ,  // ==
-  ND_NE,  // !=
-  ND_LT,  // <
-  ND_LE,  // <=
-  ND_NUM, // 数値
-} NodeKind;
-
-typedef struct Node Node;
-struct Node{
-  NodeKind kind; // ノードの種類
-  Node *lhs;     // 左辺
-  Node *rhs;     // 右辺
-  int val;       // kind=ND_NUMの時の数値
-};
-
-typedef enum{
   TK_RESERVED, // 記号
+  TK_IDENT,    // 識別子
   TK_NUM,      // 整数トークン
   TK_EOF,      // EOFトークン
 } TokenKind;
@@ -43,9 +24,39 @@ struct Token{
   int len;        // トークンの長さ
 };
 
+typedef enum{
+  ND_ADD,       // +
+  ND_SUB,       // -
+  ND_MUL,       // *
+  ND_DIV,       // /
+  ND_EQ,        // ==
+  ND_NE,        // !=
+  ND_LT,        // <
+  ND_LE,        // <=
+  ND_LVAR,      // ローカル変数
+  ND_NUM,       // 数値
+  ND_ASSIGN,    // 代入
+  ND_EXPR_STMT, // 式
+} NodeKind;
+
+typedef struct Node Node;
+struct Node{
+  NodeKind kind; // ノードの種類
+  Node *next;
+  Node *lhs;     // 左辺
+  Node *rhs;     // 右辺
+  int val;       // kind=ND_NUMの時の数値
+  char name;     // kind=ND_LVARの時の変数名
+  int offset;    // kind=ND_LVARの時のベースポインタからのオフセット
+};
+
 extern Token *token;     // 現在のトークン
 extern char *user_input; // 入力プログラム(argv)
 extern Node *node;       // 計算ノード
+
+/*
+ * デバッグ
+ */
 
 // エラー用関数(使い方はprintfと同じ)
 void error(char *loc, char *fmt, ...);
@@ -56,6 +67,8 @@ void error(char *loc, char *fmt, ...);
 
 // 次のトークンが期待される記号であれば真を返す．
 bool consume(char *op);
+
+Token *consume_ident();
 
 // 次のトークンが期待される記号であれば進める．
 // consumeとの違いは，エラーを出すかどうかである．
@@ -87,7 +100,10 @@ Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
 Node *new_node_num(int val);
 
 // BNF記法による数式の構文解析
+Node *program();
+Node *stmt();
 Node *expr();
+Node *assign();
 Node *equality();
 Node *relational();
 Node *add();
@@ -98,10 +114,8 @@ Node *primary();
 /*
  * アセンブリ出力
  */
-void begin();
-void generate(Node *node);
-void end();
+
 // アセンブリ生成
-void generator(Node *node);
+void codegen(Node *node);
 
 #endif

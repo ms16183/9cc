@@ -13,6 +13,21 @@ Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
   return new;
 }
 
+// 変数ノードを生成する．
+Node *new_node_lvar(char name){
+  Node *new = (Node*)calloc(1, sizeof(Node));
+  new->kind = ND_LVAR;
+  new->name = name;
+  new->offset = (new->name - 'a' + 1) * 8;
+  return new;
+}
+
+// 1つの式を生成する．
+Node *new_node_unary(NodeKind kind, Node *expr){
+  Node *node = new_node(kind, expr, NULL);
+  return node;
+}
+
 // 次の数値ノードを生成する．
 Node *new_node_num(int val){
   Node *new = (Node*)calloc(1, sizeof(Node));
@@ -22,7 +37,10 @@ Node *new_node_num(int val){
 }
 
 // BNF記法による数式の構文解析
+Node *program();
+Node *stmt();
 Node *expr();
+Node *assign();
 Node *equality();
 Node *relational();
 Node *add();
@@ -30,8 +48,34 @@ Node *mul();
 Node *unary();
 Node *primary();
 
+Node *program(){
+  Node head;
+  head.next = NULL;
+  Node *cur = &head;
+
+  while(!at_eof()){
+    cur->next = stmt();
+    cur = cur->next;
+  }
+  return head.next;
+}
+
+Node *stmt(){
+  Node *node = new_node_unary(ND_EXPR_STMT, expr());
+  expect(";");
+  return node;
+}
+
 Node *expr(){
-  return equality();
+  return assign();
+}
+
+Node *assign(){
+  Node *node = equality();
+  if(consume("=")){
+    node = new_node(ND_ASSIGN, node, assign());
+  }
+  return node;
 }
 
 Node *equality(){
@@ -106,7 +150,9 @@ Node *mul(){
 
 Node *unary(){
   if(consume("+")){
-    return unary();
+    // +a = 0 + a
+    Node *zero = new_node_num(0);
+    return new_node(ND_ADD, zero, unary());
   }
   if(consume("-")){
     // -a = 0 - a
@@ -124,6 +170,13 @@ Node *primary(){
     return node;
   }
 
-  return new_node_num(expect_number());
+  // 変数or数字
+  Token *tok=consume_ident();
+  if(tok){
+    return new_node_lvar(*tok->str);
+  }
+  else{
+    return new_node_num(expect_number());
+  }
 }
 

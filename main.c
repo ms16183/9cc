@@ -11,15 +11,13 @@ int main(int argc, char **argv){
     return 1;
   }
 
-  // トークナイズする．
+  // トークナイズ & 構文解析．
   user_input = argv[1];
   token = tokenize();
-
-  // 四則演算(+-*/())を解析して計算する．
-  node = expr();
+  node = program();
 
   // アセンブリ生成(標準出力)
-  generator(node);
+  codegen(node);
 
   return 0;
 }

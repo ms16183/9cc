@@ -1,17 +1,50 @@
 #include "9cc.h"
 
-void begin(){
-  printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("\n");
-  printf("main:\n");
+void generate_lval(Node *node){
+  if(node->kind != ND_LVAR){
+    error(NULL, "左辺値が変数ではありません．");
+  }
+
+  printf("  lea rax, [rbp-%d]\n", node->offset);
+  printf("  push rax\n");
   return;
+}
+
+void load(){
+    printf("  pop rax\n");
+    printf("  mov rax, [rax]\n");
+    printf("  push rax\n");
+    return;
+}
+
+void store(){
+    printf("  pop rdi\n");
+    printf("  pop rax\n");
+    printf("  mov [rax],  rdi\n");
+    printf("  push rdi\n");
+    return;
 }
 
 void generate(Node *node){
 
   if(node->kind == ND_NUM){
     printf("  push %d\n", node->val);
+    return;
+  }
+  if(node->kind == ND_LVAR){
+    generate_lval(node);
+    load();
+    return;
+  }
+  if(node->kind == ND_EXPR_STMT){
+    generate(node->lhs);
+    printf("  add rsp, 8\n");
+    return;
+  }
+  if(node->kind == ND_ASSIGN){
+    generate_lval(node->lhs);
+    generate(node->rhs);
+    store();
     return;
   }
 
@@ -60,17 +93,23 @@ void generate(Node *node){
   return;
 }
 
-void end(){
-  // スタックトップにある，数式の計算結果をraxにpopして出力とする．
-  printf("  pop rax\n");
-  printf("  ret \n");
-  return;
-}
+void codegen(Node *node){
+  printf(".intel_syntax noprefix\n");
+  printf(".global main\n");
+  printf("\n");
+  printf("main:\n");
 
-void generator(Node *node){
-  begin();
-  generate(node);
-  end();
+  printf("  push rbp\n");
+  printf("  mov rbp, rsp\n");
+  printf("  sub rsp, 208\n");
+
+  // セミコロンで区切って計算する．
+  for(Node *n = node; n; n = n->next){
+    generate(n);
+  }
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
+  printf("  ret \n");
   return;
 }
 

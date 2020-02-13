@@ -13,6 +13,16 @@ bool consume(char *op){
   return true;
 }
 
+// 次のトークンが変数であれば真を返す．
+Token *consume_ident(){
+  if(token->kind != TK_IDENT){
+    return NULL;
+  }
+  Token *tok = token;
+  token = token->next;
+  return tok;
+}
+
 // 次のトークンが期待される記号であれば進める．
 // consumeとの違いは，エラーを出すかどうかである．
 void expect(char *op){
@@ -62,17 +72,16 @@ Token *tokenize(){
 
   while(*p){
 
+    /*
+     * ここのif文では，文字長が長いトークンから判別する．
+     * なぜなら，>=よりも先に>をトークン化しようとすると
+     * >=の>が優先されてトークン化され，=は無視されるからである．
+     * ただし空白や数字は他の演算子や識別子と被ることはないので
+     * どこに書いても問題ない．
+     */
+
     // 空白を無視する．
     if(isspace(*p)){
-      p++;
-      continue;
-    }
-
-    // 四則演算
-    if(check_symbol(p, "+") || check_symbol(p, "-") ||
-       check_symbol(p, "*") || check_symbol(p, "/") ||
-       check_symbol(p, "(") || check_symbol(p, ")") ){
-      cur = new_token(TK_RESERVED, cur, p, 1);
       p++;
       continue;
     }
@@ -84,11 +93,40 @@ Token *tokenize(){
         p += 2;
         continue;
     }
-    // >=や<=と1文字目が被るので>=，<=より後に記述すること．
     if(check_symbol(p, ">") || check_symbol(p, "<")){
         cur = new_token(TK_RESERVED, cur, p, 1);
         p++;
         continue;
+    }
+
+    // 代入
+    if(check_symbol(p, "=")){
+        cur = new_token(TK_RESERVED, cur, p, 1);
+        p++;
+        continue;
+    }
+
+    // 区切り
+    if(check_symbol(p, ";")){
+        cur = new_token(TK_RESERVED, cur, p, 1);
+        p++;
+        continue;
+    }
+
+    // 四則演算
+    if(check_symbol(p, "+") || check_symbol(p, "-") ||
+       check_symbol(p, "*") || check_symbol(p, "/") ||
+       check_symbol(p, "(") || check_symbol(p, ")") ){
+      cur = new_token(TK_RESERVED, cur, p, 1);
+      p++;
+      continue;
+    }
+
+    // 1文字の変数
+    if(isalpha(*p)){
+      cur = new_token(TK_IDENT, cur, p, 1);
+      p++;
+      continue;
     }
 
     // 数値
