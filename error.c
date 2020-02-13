@@ -1,7 +1,7 @@
 #include "9cc.h"
 
 // エラー用関数(使い方はprintfと同じ)
-void error(char *loc, char *fmt, ...){
+void error_at(char *loc, char *fmt, ...){
   va_list ap;
   va_start(ap, fmt);
 
@@ -15,3 +15,9 @@ void error(char *loc, char *fmt, ...){
   exit(1);
 }
 
+void error(char *fmt, ...){
+  va_list ap;
+  va_start(ap, fmt);
+  vfprintf(stderr, fmt, ap);
+  exit(1);
+}

@@ -2,7 +2,7 @@
 
 void generate_lval(Node *node){
   if(node->kind != ND_LVAR){
-    error(NULL, "左辺値が変数ではありません．");
+    error("左辺値が変数ではありません．\n");
   }
 
   printf("  lea rax, [rbp-%d]\n", node->offset);

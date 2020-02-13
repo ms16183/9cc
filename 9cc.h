@@ -58,8 +58,11 @@ extern Node *node;       // 計算ノード
  * デバッグ
  */
 
+// ポインタ指定エラー用関数(使い方はprintfと同じ)
+void error_at(char *loc, char *fmt, ...);
+
 // エラー用関数(使い方はprintfと同じ)
-void error(char *loc, char *fmt, ...);
+void error(char *fmt, ...);
 
 /*
  * トークナイザ
@@ -101,15 +104,6 @@ Node *new_node_num(int val);
 
 // BNF記法による数式の構文解析
 Node *program();
-Node *stmt();
-Node *expr();
-Node *assign();
-Node *equality();
-Node *relational();
-Node *add();
-Node *mul();
-Node *unary();
-Node *primary();
 
 /*
  * アセンブリ出力

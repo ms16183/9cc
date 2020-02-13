@@ -27,7 +27,7 @@ Token *consume_ident(){
 // consumeとの違いは，エラーを出すかどうかである．
 void expect(char *op){
   if(token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len)){
-    error(token->str, "'%s'ではありません．\n", op);
+    error_at(token->str, "'%s'ではありません．\n", op);
   }
   token = token->next;
 }
@@ -35,7 +35,7 @@ void expect(char *op){
 // 次のトークンが数字であればその数値を返す．
 int expect_number(){
   if(token->kind != TK_NUM){
-    error(token->str, "数ではありません．");
+    error_at(token->str, "数ではありません．");
   }
   int val = token->val;
   token = token->next;
@@ -137,7 +137,7 @@ Token *tokenize(){
     }
 
     // それ以外
-    error(p, "トークナイズできない文字です．");
+    error_at(p, "トークナイズできない文字です．");
   }
 
   new_token(TK_EOF, cur, p, 0);

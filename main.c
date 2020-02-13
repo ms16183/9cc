@@ -7,7 +7,7 @@ Node *node;       // 計算ノード
 int main(int argc, char **argv){
 
   if(argc != 2){
-    fprintf(stderr, "Usage: ./9cc code\n");
+    error("Usage: ./9cc code\n");
     return 1;
   }
 
