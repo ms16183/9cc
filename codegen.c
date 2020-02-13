@@ -27,25 +27,29 @@ void store(){
 
 void generate(Node *node){
 
-  if(node->kind == ND_NUM){
-    printf("  push %d\n", node->val);
-    return;
-  }
-  if(node->kind == ND_LVAR){
-    generate_lval(node);
-    load();
-    return;
-  }
-  if(node->kind == ND_EXPR_STMT){
-    generate(node->lhs);
-    printf("  add rsp, 8\n");
-    return;
-  }
-  if(node->kind == ND_ASSIGN){
-    generate_lval(node->lhs);
-    generate(node->rhs);
-    store();
-    return;
+  switch(node->kind){
+    case ND_NUM:
+      printf("  push %d\n", node->val);
+      return;
+      break;
+    case ND_LVAR:
+      generate_lval(node);
+      load();
+      return;
+      break;
+    case ND_EXPR_STMT:
+      generate(node->lhs);
+      printf("  add rsp, 8\n");
+      return;
+      break;
+    case ND_ASSIGN:
+      generate_lval(node->lhs);
+      generate(node->rhs);
+      store();
+      return;
+      break;
+    default:
+      break;
   }
 
   generate(node->lhs);
@@ -54,38 +58,42 @@ void generate(Node *node){
   printf("  pop rdi\n");
   printf("  pop rax\n");
 
-  if(node->kind == ND_ADD){
-    printf("  add rax, rdi\n");
-  }
-  if(node->kind == ND_SUB){
-    printf("  sub rax, rdi\n");
-  }
-  if(node->kind == ND_MUL){
-    printf("  imul rax, rdi\n");
-  }
-  if(node->kind == ND_DIV){
-    printf("  cqo\n");      // raxの64bitを128bitに伸ばしている．
-    printf("  idiv rdi\n");
-  }
-  if(node->kind == ND_EQ){
-    printf("  cmp rax, rdi\n");
-    printf("  sete al\n");
-    printf("  movzb rax, al\n");
-  }
-  if(node->kind == ND_NE){
-    printf("  cmp rax, rdi\n");
-    printf("  setne al\n");
-    printf("  movzb rax, al\n");
-  }
-  if(node->kind == ND_LT){
-    printf("  cmp rax, rdi\n");
-    printf("  setl al\n");
-    printf("  movzb rax, al\n");
-  }
-  if(node->kind == ND_LE){
-    printf("  cmp rax, rdi\n");
-    printf("  setle al\n");
-    printf("  movzb rax, al\n");
+  switch(node->kind){
+    case ND_ADD:
+      printf("  add rax, rdi\n");
+      break;
+    case ND_SUB:
+      printf("  sub rax, rdi\n");
+      break;
+    case ND_MUL:
+      printf("  imul rax, rdi\n");
+      break;
+    case ND_DIV:
+      printf("  cqo\n");      // raxの64bitを128bitに伸ばしている．
+      printf("  idiv rdi\n");
+      break;
+    case ND_EQ:
+      printf("  cmp rax, rdi\n");
+      printf("  sete al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_NE:
+      printf("  cmp rax, rdi\n");
+      printf("  setne al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_LT:
+      printf("  cmp rax, rdi\n");
+      printf("  setl al\n");
+      printf("  movzb rax, al\n");
+      break;
+    case ND_LE:
+      printf("  cmp rax, rdi\n");
+      printf("  setle al\n");
+      printf("  movzb rax, al\n");
+      break;
+    default:
+      break;
   }
 
   // スタックトップに計算結果を置く．
@@ -109,7 +117,7 @@ void codegen(Node *node){
   }
   printf("  mov rsp, rbp\n");
   printf("  pop rbp\n");
-  printf("  ret \n");
+  printf("  ret\n");
   return;
 }
 

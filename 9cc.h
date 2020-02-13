@@ -71,6 +71,7 @@ void error(char *fmt, ...);
 // 次のトークンが期待される記号であれば真を返す．
 bool consume(char *op);
 
+// 次のトークンが変数であれば真を返す．
 Token *consume_ident();
 
 // 次のトークンが期待される記号であれば進める．
