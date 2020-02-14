@@ -50,9 +50,18 @@ struct Node{
   int offset;    // kind=ND_LVARの時のベースポインタからのオフセット
 };
 
+typedef struct LVar LVar;
+struct LVar{
+  LVar *next; // リスト
+  char *name; // 変数名
+  int len;    // 変数名の長さ
+  int offset; // rbpからのオフセット
+};
+
 extern Token *token;     // 現在のトークン
 extern char *user_input; // 入力プログラム(argv)
 extern Node *node;       // 計算ノード
+extern LVar *locals;     // ローカル変数
 
 /*
  * デバッグ
@@ -89,6 +98,10 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len);
 
 // 入力されたプログラムの記号が正しいか確認する．
 bool check_symbol(char *p, char *q);
+
+// ローカル変数でその名前が以前使われたか判別する．
+// 見つかった場合，そのローカル変数のリストのポインタが返却される．
+LVar *find_lvar(Token *token);
 
 // トークナイザ
 Token *tokenize();

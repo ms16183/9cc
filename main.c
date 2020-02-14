@@ -3,6 +3,7 @@
 Token *token;     // トークン
 char *user_input; // 入力プログラム(argv)
 Node *node;       // 計算ノード
+LVar *locals;     // ローカル変数
 
 int main(int argc, char **argv){
 

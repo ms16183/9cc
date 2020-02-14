@@ -13,7 +13,7 @@ bool consume(char *op){
   return true;
 }
 
-// 次のトークンが変数であれば真を返す．
+// 次のトークンが変数であればそのノードを返す．
 Token *consume_ident(){
   if(token->kind != TK_IDENT){
     return NULL;
@@ -60,6 +60,17 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len){
 // 入力されたプログラムの記号が正しいか確認する．
 bool check_symbol(char *p, char *q){
   return !memcmp(p, q, strlen(q));
+}
+
+// ローカル変数でその名前が以前使われたか判別する．
+// 見つかった場合，そのローカル変数のリストのポインタが返却される．
+LVar *find_lvar(Token *token){
+  for(LVar *var = locals; var; var=var->next){
+    if(var->len == token->len && !memcmp(token->str, var->name, var->len)){
+      return var;
+    }
+  }
+  return NULL;
 }
 
 Token *tokenize(){
@@ -122,10 +133,14 @@ Token *tokenize(){
       continue;
     }
 
-    // 1文字の変数
+    // 変数
     if(isalpha(*p)){
-      cur = new_token(TK_IDENT, cur, p, 1);
-      p++;
+      int l = 1;
+      while(isalpha(*(p+l))){
+        l++;
+      }
+      cur = new_token(TK_IDENT, cur, p, l);
+      p += l;
       continue;
     }
 

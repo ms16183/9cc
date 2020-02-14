@@ -85,5 +85,8 @@ try   0 "a=0; a;"
 try 100 "b=100; b;"
 try  10 "z=2; z*(z*z)+z;"
 try   6 "a=1; b=2; c=3; c + a + b;"
+try   1 "hoge = 2; foo = 1 + hoge; foo - hoge;"
+try   6 "I = 1; love = 2; you = 3; I*love*you;"
+try   1 "greater = 100; less = 20; greater > less;"
 
 echo -e "\nOK"

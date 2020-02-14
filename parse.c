@@ -14,11 +14,30 @@ Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
 }
 
 // 変数ノードを生成する．
-Node *new_node_lvar(char name){
+Node *new_node_lvar(Token *tok){
+
   Node *new = (Node*)calloc(1, sizeof(Node));
   new->kind = ND_LVAR;
-  new->name = name;
-  new->offset = (new->name - 'a' + 1) * 8;
+
+  LVar *lvar = find_lvar(tok);
+  if(lvar){
+    new->offset = lvar->offset;
+  }
+  // 新しく出現した変数名の場合，リストに追加する．
+  else{
+    // ローカル変数自体が登場していない場合，
+    if(!locals){
+      locals = (LVar*)calloc(1, sizeof(LVar));
+    }
+
+    lvar = (LVar*)calloc(1, sizeof(LVar));
+    lvar->next = locals;
+    lvar->name = tok->str;
+    lvar->len = tok->len;
+    lvar->offset = locals->offset + 8;
+    new->offset = lvar->offset;
+    locals = lvar;
+  }
   return new;
 }
 
@@ -173,7 +192,7 @@ Node *primary(){
   // 変数or数字
   Token *tok=consume_ident();
   if(tok){
-    return new_node_lvar(*tok->str);
+    return new_node_lvar(tok);
   }
   else{
     return new_node_num(expect_number());
