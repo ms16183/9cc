@@ -48,6 +48,14 @@ void generate(Node *node){
       store();
       return;
       break;
+    case ND_RETURN:
+      generate(node->lhs);
+      printf("  pop rax\n");
+      printf("  mov rsp, rbp\n");
+      printf("  pop rbp\n");
+      printf("  ret\n");
+      return;
+      break;
     default:
       break;
   }

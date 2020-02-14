@@ -89,4 +89,10 @@ try   1 "hoge = 2; foo = 1 + hoge; foo - hoge;"
 try   6 "I = 1; love = 2; you = 3; I*love*you;"
 try   1 "greater = 100; less = 20; greater > less;"
 
+msg "return文のテスト"
+try 6 "return 1+2+3;"
+try 1 "return 1; 2; 3;"
+try 5 "4; return 5; 6;"
+try 9 "7; 8; return 9;"
+
 echo -e "\nOK"

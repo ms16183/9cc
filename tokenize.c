@@ -73,6 +73,10 @@ LVar *find_lvar(Token *token){
   return NULL;
 }
 
+int is_alnum(char c){
+  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || (c == '_');
+}
+
 Token *tokenize(){
 
   char *p = user_input;
@@ -91,6 +95,12 @@ Token *tokenize(){
      * どこに書いても問題ない．
      */
 
+    if(check_symbol(p, "return") && !is_alnum(p[6])){
+      cur = new_token(TK_RESERVED, cur, p, 6);
+      p += 6;
+      continue;
+    }
+
     // 空白を無視する．
     if(isspace(*p)){
       p++;
@@ -105,23 +115,23 @@ Token *tokenize(){
         continue;
     }
     if(check_symbol(p, ">") || check_symbol(p, "<")){
-        cur = new_token(TK_RESERVED, cur, p, 1);
-        p++;
-        continue;
+      cur = new_token(TK_RESERVED, cur, p, 1);
+      p++;
+      continue;
     }
 
     // 代入
     if(check_symbol(p, "=")){
-        cur = new_token(TK_RESERVED, cur, p, 1);
-        p++;
-        continue;
+      cur = new_token(TK_RESERVED, cur, p, 1);
+      p++;
+      continue;
     }
 
     // 区切り
     if(check_symbol(p, ";")){
-        cur = new_token(TK_RESERVED, cur, p, 1);
-        p++;
-        continue;
+      cur = new_token(TK_RESERVED, cur, p, 1);
+      p++;
+      continue;
     }
 
     // 四則演算

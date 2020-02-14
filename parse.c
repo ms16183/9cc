@@ -80,7 +80,13 @@ Node *program(){
 }
 
 Node *stmt(){
-  Node *node = new_node_unary(ND_EXPR_STMT, expr());
+  Node *node;
+  if(consume("return")){
+    node = new_node_unary(ND_RETURN, expr());
+  }
+  else{
+    node = new_node_unary(ND_EXPR_STMT, expr());
+  }
   expect(";");
   return node;
 }
