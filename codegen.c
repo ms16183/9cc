@@ -11,18 +11,26 @@ void generate_lval(Node *node){
 }
 
 void load(){
-    printf("  pop rax\n");
-    printf("  mov rax, [rax]\n");
-    printf("  push rax\n");
-    return;
+  printf("  pop rax\n");
+  printf("  mov rax, [rax]\n");
+  printf("  push rax\n");
+  return;
 }
 
 void store(){
-    printf("  pop rdi\n");
-    printf("  pop rax\n");
-    printf("  mov [rax],  rdi\n");
-    printf("  push rdi\n");
-    return;
+  printf("  pop rdi\n");
+  printf("  pop rax\n");
+  printf("  mov [rax],  rdi\n");
+  printf("  push rdi\n");
+  return;
+}
+
+void ret(){
+  printf("  pop rax\n");
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
+  printf("  ret\n");
+  return;
 }
 
 void generate(Node *node){
@@ -50,10 +58,7 @@ void generate(Node *node){
       break;
     case ND_RETURN:
       generate(node->lhs);
-      printf("  pop rax\n");
-      printf("  mov rsp, rbp\n");
-      printf("  pop rbp\n");
-      printf("  ret\n");
+      ret();
       return;
       break;
     default:
@@ -123,9 +128,6 @@ void codegen(Node *node){
   for(Node *n = node; n; n = n->next){
     generate(n);
   }
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
   return;
 }
 
