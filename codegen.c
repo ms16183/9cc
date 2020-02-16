@@ -68,6 +68,8 @@ void generate(Node *node){
   generate(node->lhs);
   generate(node->rhs);
 
+  // 二項演算子
+
   printf("  pop rdi\n");
   printf("  pop rax\n");
 
