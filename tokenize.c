@@ -127,7 +127,7 @@ Token *tokenize(){
       continue;
     }
 
-    // 区切り
+    // ターミネータ
     if(check_symbol(p, ";")){
       cur = new_token(TK_RESERVED, cur, p, 1);
       p++;
