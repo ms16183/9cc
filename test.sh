@@ -104,9 +104,26 @@ testcase(){
   6 )
     msg "return文のテスト"
     try 6 "return 1+2+3;"
+    try 2 "hoge=2; return hoge;"
     try 1 "return 1; 2; 3;"
     try 5 "4; return 5; 6;"
     try 9 "7; 8; return 9;"
+    try 0 "return 0; return 1;"
+    ;;
+
+  7 )
+    msg "if文のテスト"
+    try  3 "if(1+2 == 3) return 3; return 2;"
+    try  2 "if(1*2 == 3) return 3; return 2;"
+    try  1 "if ( 0 ) return 100; return 2-1;"
+    try  3 "foo=3; if(5-foo == 5-(2+1))   return foo; return 0;"
+    try  0 "foo=3; if(5-foo != 5-(2+1))   return foo; return 0;"
+    try  2 "abc = 5; hoge = 2; if ( 0 ) hoge = abc * 3; return hoge;"
+    try 15 "abc = 5; hoge = 2; if ( 1 ) hoge = abc * 3; return hoge;"
+    try  4 "num=1; if(num == 1) if(num == 1) num = num*2; num = num*2; return num;"
+    try  2 "num=1; if(num == 1) if(num != 1) num = num*2; num = num*2; return num;"
+    try  2 "num=1; if(num != 1) if(num == 1) num = num*2; num = num*2; return num;"
+    try  2 "num=1; if(num != 1) if(num != 1) num = num*2; num = num*2; return num;"
     ;;
 
   * )

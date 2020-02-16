@@ -41,7 +41,7 @@ Node *new_node_lvar(Token *tok){
   return new;
 }
 
-// 1つの式を生成する．
+// 片方のみのノードを生成する．
 Node *new_node_unary(NodeKind kind, Node *expr){
   Node *node = new_node(kind, expr, NULL);
   return node;
@@ -55,7 +55,7 @@ Node *new_node_num(int val){
   return new;
 }
 
-// BNF記法による数式の構文解析
+// BNFによる数式の構文解析
 Node *program();
 Node *stmt();
 Node *expr();
@@ -81,6 +81,20 @@ Node *program(){
 
 Node *stmt(){
   Node *node;
+  Node *lhs;
+  Node *rhs;
+
+  if(consume("if")){
+    expect("(");
+    lhs = expr(); // 条件式
+    expect(")");
+    rhs = stmt(); // 条件式が真のときの処理
+
+    //node = new_node(ND_IF, expr(), stmt());だと途中の")"を処理しないためエラーが発生する．
+    node = new_node(ND_IF, lhs, rhs);
+    return node;
+  }
+
   if(consume("return")){
     node = new_node_unary(ND_RETURN, expr());
   }

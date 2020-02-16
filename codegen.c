@@ -35,6 +35,8 @@ void ret(){
 
 void generate(Node *node){
 
+  static int label_num = 0;
+
   switch(node->kind){
     case ND_NUM:
       printf("  push %d\n", node->val);
@@ -54,6 +56,16 @@ void generate(Node *node){
       generate_lval(node->lhs);
       generate(node->rhs);
       store();
+      return;
+      break;
+    case ND_IF:
+      generate(node->lhs); // 条件式
+      printf("  pop rax\n");
+      printf("  cmp rax, 0\n");
+      printf("  je .Lend%03d\n", label_num);
+      generate(node->rhs); // 条件式が真の場合
+      printf(".Lend%03d:\n", label_num);
+      label_num++;
       return;
       break;
     case ND_RETURN:

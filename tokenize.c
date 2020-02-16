@@ -95,6 +95,14 @@ Token *tokenize(){
      * どこに書いても問題ない．
      */
 
+    // if
+    if(check_symbol(p, "if") && !is_alnum(p[2])){
+      cur = new_token(TK_RESERVED, cur, p, 2);
+      p += 2;
+      continue;
+    }
+
+    // return
     if(check_symbol(p, "return") && !is_alnum(p[6])){
       cur = new_token(TK_RESERVED, cur, p, 6);
       p += 6;

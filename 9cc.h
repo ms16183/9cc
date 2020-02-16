@@ -37,6 +37,7 @@ typedef enum{
   ND_NUM,       // 数値
   ND_ASSIGN,    // 代入
   ND_EXPR_STMT, // 式
+  ND_IF,        // ifの条件
   ND_RETURN,    // return
 } NodeKind;
 
