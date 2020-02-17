@@ -164,7 +164,14 @@ COMMENT
     try 3 "       for(i = 0;i < 3;) i = i + 1; return i;"
     try 4 "i = 0; for(     ;i < 3; i = i + 1) i = i + 1; return i;"
     try 9 "n = 0; for( ; ; ) if (n == 9) return n; else n = n + 1;"
+    ;;
 
+  11 )
+    msg "ブロックのテスト"
+    try   6 "i = 0; sum = 0; while(i <= 3){sum = sum + i; i = i + 1;} return sum;"
+    try 120 "pro = 1; for(i = 1; i <= 5; i = i + 1){pro = pro * i; } return pro;"
+    try   9 "n = 0; for( ; ; ) {if (n == 9) return n; n = n + 1;}"
+    try   1 "a = 0; if(a == 0){} else return 0; return 1;"
     ;;
 
   * )

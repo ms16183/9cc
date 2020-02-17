@@ -46,6 +46,12 @@ void generate(Node *node){
       printf("  add rsp, 8\n");
       return;
       break;
+    case ND_BLOCK:
+      for(Node *n = node->block; n; n = n->next){
+        generate(n);
+      }
+      return;
+      break;
     case ND_ASSIGN:
       generate_lval(node->lhs);
       generate(node->rhs);

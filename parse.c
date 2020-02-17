@@ -117,6 +117,22 @@ Node *program(){
 Node *stmt(){
   Node *node;
 
+  if(consume("{")){
+    // ブロックが閉じるまでの式をリスト化する．
+    Node head;
+    head.next = NULL;
+    Node *cur = &head;
+
+    while(!consume("}")){
+      cur->next = stmt();
+      cur = cur->next;
+    }
+    // ブロックであるとわかればよいので左辺値や右辺値は無くてよい．
+    node = new_node(ND_BLOCK, NULL, NULL);
+    node->block = head.next;
+    return node;
+  }
+
   if(consume("if")){
     Node *cond;
     Node *then;
@@ -139,20 +155,20 @@ Node *stmt(){
     Node *cond;
     Node *then;
 
-    expect("("); // 条件式
-    cond = expr();
-    expect(")"); // 条件式が真のときの処理
-    then = stmt();
+    expect("(");
+    cond = expr(); // 条件式
+    expect(")");
+    then = stmt(); // 条件式が真のときの処理
 
     node = new_node_while(cond, then);
     return node;
   }
 
   if(consume("for")){
-    Node * for_init = NULL;
-    Node * cond = NULL;
-    Node * for_update = NULL;
-    Node * for_then;
+    Node *for_init = NULL;
+    Node *cond = NULL;
+    Node *for_update = NULL;
+    Node *for_then;
 
     expect("(");
 
