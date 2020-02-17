@@ -84,6 +84,20 @@ void generate(Node *node){
       }
       return;
       break;
+    case ND_WHILE:
+      label_num_tmp = label_num;
+      label_num++;
+
+      printf(".Lbegin%03d:\n", label_num_tmp);
+      generate(node->while_cond);
+      printf("  pop rax\n");
+      printf("  cmp rax, 0\n");
+      printf("  je .Lend%03d\n", label_num_tmp);
+      generate(node->while_true);
+      printf("  jmp .Lbegin%03d\n", label_num_tmp);
+      printf(".Lend%03d:\n", label_num_tmp);
+      return;
+      break;
     case ND_RETURN:
       generate(node->lhs);
       ret();

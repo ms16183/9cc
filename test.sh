@@ -146,6 +146,14 @@ testcase(){
 COMMENT
     ;;
 
+  9 )
+    msg "while文のテスト"
+    try   3 "i = 1; while(i < 3) i = i + 1; return i;"
+    try 200 "i = 1; while(i < 100) if (i == 10) i = 200; else i = i + 1; return i;"
+    try   1 "i = 1; while (0) i = i + 1; return i;"
+    try 100 "i = 1; while ( 1 ) if (i == 100) return i; else i = i + 1;"
+    ;;
+
   * )
     exit 0
     ;;

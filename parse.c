@@ -65,6 +65,15 @@ Node *new_node_if(Node *if_cond, Node *if_true, Node *if_false){
   return new;
 }
 
+// while文のノードを生成する．
+Node *new_node_while(Node *while_cond, Node *while_true){
+  Node *new = (Node*)calloc(1, sizeof(Node));
+  new->kind = ND_WHILE;
+  new->while_cond = while_cond;
+  new->while_true = while_true;
+  return new;
+}
+
 // BNFによる数式の構文解析
 Node *program();
 Node *stmt();
@@ -107,6 +116,19 @@ Node *stmt(){
     }
 
     node = new_node_if(if_cond, if_true, if_false);
+    return node;
+  }
+
+  if(consume("while")){
+    Node *while_cond;
+    Node *while_true;
+
+    expect("("); // 条件式
+    while_cond = expr();
+    expect(")"); // 条件式が真のときの処理
+    while_true = stmt();
+
+    node = new_node_while(while_cond, while_true);
     return node;
   }
 

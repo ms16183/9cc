@@ -38,6 +38,7 @@ typedef enum{
   ND_ASSIGN,    // 代入
   ND_EXPR_STMT, // 式
   ND_IF,        // if
+  ND_WHILE,     // while
   ND_RETURN,    // return
 } NodeKind;
 
@@ -45,14 +46,16 @@ typedef struct Node Node;
 struct Node{
   NodeKind kind; // ノードの種類
   Node *next;
-  Node *lhs;      // 左辺
-  Node *rhs;      // 右辺
-  Node *if_cond;  // kind=ND_IFにおいて，if文の条件式
-  Node *if_true;  // kind=ND_IFにおいて，if文の条件式が真のとき
-  Node *if_false; // kind=ND_IFにおいて，if文の条件式が偽のとき
-  int val;        // kind=ND_NUMの時の数値
-  char name;      // kind=ND_LVARの時の変数名
-  int offset;     // kind=ND_LVARの時のベースポインタからのオフセット
+  Node *lhs;        // 左辺
+  Node *rhs;        // 右辺
+  Node *if_cond;    // kind=ND_IFにおいて，if文の条件式
+  Node *if_true;    // kind=ND_IFにおいて，if文の条件式が真のとき
+  Node *if_false;   // kind=ND_IFにおいて，if文の条件式が偽のとき
+  Node *while_cond; // kind=ND_WHILEにおいて，while文の条件式
+  Node *while_true; // kind=ND_WHILEにおいて，while文の条件式が真のとき
+  int val;          // kind=ND_NUMの時の数値
+  char name;        // kind=ND_LVARの時の変数名
+  int offset;       // kind=ND_LVARの時のベースポインタからのオフセット
 };
 
 typedef struct LVar LVar;
