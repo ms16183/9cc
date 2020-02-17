@@ -126,6 +126,26 @@ testcase(){
     try  2 "num=1; if(num != 1) if(num != 1) num = num*2; num = num*2; return num;"
     ;;
 
+  8 )
+    msg "if else文のテスト"
+    try 5 "hoge = 2; if(hoge == 2) hoge = 5; else hoge = 0; return hoge;"
+    try 0 "hoge = 2; if(hoge != 2) hoge = 5; else hoge = 0; return hoge;"
+    try 1 "a = 1; b = a; out = 0; if(a == 1) if(b == 1) out = 1; else out = 2; else out = 3; return out;"
+    try 3 "a = 1; b = a; out = 0; if(a != 1) if(b == 1) out = 1; else out = 2; else out = 3; return out;"
+    try 2 "a = 1; b = a; out = 0; if(a == 1) if(b != 1) out = 1; else out = 2; else out = 3; return out;"
+    try 3 "a = 1; b = a; out = 0; if(a != 1) if(b != 1) out = 1; else out = 2; else out = 3; return out;"
+<< COMMENT
+    if (a == 1)
+      if (b == 1)
+        out = 1
+      else
+        out = 2
+    else
+      out = 3
+    return out
+COMMENT
+    ;;
+
   * )
     exit 0
     ;;

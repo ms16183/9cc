@@ -55,6 +55,16 @@ Node *new_node_num(int val){
   return new;
 }
 
+// if else文のノードを生成する．
+Node *new_node_if(Node *if_cond, Node *if_true, Node *if_false){
+  Node *new = (Node*)calloc(1, sizeof(Node));
+  new->kind = ND_IF;
+  new->if_cond = if_cond;
+  new->if_true = if_true;
+  new->if_false = if_false;
+  return new;
+}
+
 // BNFによる数式の構文解析
 Node *program();
 Node *stmt();
@@ -81,17 +91,22 @@ Node *program(){
 
 Node *stmt(){
   Node *node;
-  Node *lhs;
-  Node *rhs;
 
   if(consume("if")){
-    expect("(");
-    lhs = expr(); // 条件式
-    expect(")");
-    rhs = stmt(); // 条件式が真のときの処理
+    Node *if_cond;
+    Node *if_true;
+    Node *if_false = NULL;
 
-    //node = new_node(ND_IF, expr(), stmt());だと途中の")"を処理しないためエラーが発生する．
-    node = new_node(ND_IF, lhs, rhs);
+    expect("(");
+    if_cond = expr(); // 条件式
+    expect(")");
+    if_true = stmt(); // 条件式が真のときの処理
+
+    if(consume("else")){
+      if_false = stmt(); // 条件式が偽のときの処理
+    }
+
+    node = new_node_if(if_cond, if_true, if_false);
     return node;
   }
 
