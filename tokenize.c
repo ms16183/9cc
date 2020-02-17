@@ -4,7 +4,6 @@
  * トークナイザ
  */
 
-// 次のトークンが期待される記号であれば真を返す．
 bool consume(char *op){
   if(token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len)){
     return false;
@@ -13,7 +12,6 @@ bool consume(char *op){
   return true;
 }
 
-// 次のトークンが変数であればそのノードを返す．
 Token *consume_ident(){
   if(token->kind != TK_IDENT){
     return NULL;
@@ -23,16 +21,13 @@ Token *consume_ident(){
   return tok;
 }
 
-// 次のトークンが期待される記号であれば進める．
-// consumeとの違いは，エラーを出すかどうかである．
 void expect(char *op){
   if(token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len)){
-    error_at(token->str, "'%s'ではありません．\n", op);
+    error_at(token->str, "'%s'を期待しています．", op);
   }
   token = token->next;
 }
 
-// 次のトークンが数字であればその数値を返す．
 int expect_number(){
   if(token->kind != TK_NUM){
     error_at(token->str, "数ではありません．");
@@ -42,12 +37,10 @@ int expect_number(){
   return val;
 }
 
-// トークンがこれ以上続かないなら真を返す．
 bool at_eof(){
   return token->kind == TK_EOF;
 }
 
-// 次のトークンを生成する．
 Token *new_token(TokenKind kind, Token *cur, char *str, int len){
   Token *new = (Token*)calloc(1, sizeof(Token));
   new->kind = kind;
@@ -73,8 +66,12 @@ LVar *find_lvar(Token *token){
   return NULL;
 }
 
-int is_alnum(char c){
-  return ('a' <= c && c <= 'z') || ('A' <= c && c <= 'Z') || ('0' <= c && c <= '9') || (c == '_');
+bool is_alpha(char c){
+  return isalpha(c) || c == '_';
+}
+
+bool is_alnum(char c){
+  return isalpha(c) || isdigit(c) || c == '_';
 }
 
 Token *tokenize(){
@@ -172,9 +169,9 @@ Token *tokenize(){
     }
 
     // 変数
-    if(isalpha(*p)){
+    if(is_alpha(*p)){
       int l = 1;
-      while(isalpha(*(p+l))){
+      while(is_alnum(*(p+l))){
         l++;
       }
       cur = new_token(TK_IDENT, cur, p, l);

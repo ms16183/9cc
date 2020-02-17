@@ -93,7 +93,9 @@ testcase(){
   5 )
     msg "変数代入のテスト"
     try   0 "a=0; return a;"
-    try 100 "b=100; return b;"
+    try 100 "_b=100; return _b;"
+    try 100 "c1=100; return c1;"
+    try 100 "_a1b2_ = 100; return _a1b2_;"
     try  10 "z=2; return z*(z*z)+z;"
     try   6 "a=1; b=2; c=3; return c + a + b;"
     try   1 "hoge = 2; foo = 1 + hoge; return foo - hoge;"
