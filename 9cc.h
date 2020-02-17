@@ -8,6 +8,9 @@
 #include <ctype.h>
 #include <stdarg.h>
 
+/*
+ * トークナイズ用トークン
+ */
 typedef enum{
   TK_RESERVED, // 記号
   TK_IDENT,    // 識別子
@@ -24,6 +27,9 @@ struct Token{
   int len;        // トークンの長さ
 };
 
+/*
+ * 構文解析用ノード
+ */
 typedef enum{
   ND_ADD,       // +
   ND_SUB,       // -
@@ -37,7 +43,10 @@ typedef enum{
   ND_NUM,       // 数値
   ND_ASSIGN,    // 代入
   ND_EXPR_STMT, // 式
+  ND_BLOCK,     // ブロック
   ND_IF,        // if
+  ND_WHILE,     // while
+  ND_FOR,       // for
   ND_RETURN,    // return
 } NodeKind;
 
@@ -45,16 +54,22 @@ typedef struct Node Node;
 struct Node{
   NodeKind kind; // ノードの種類
   Node *next;
-  Node *lhs;      // 左辺
-  Node *rhs;      // 右辺
-  Node *if_cond;  // kind=ND_IFにおいて，if文の条件式
-  Node *if_true;  // kind=ND_IFにおいて，if文の条件式が真のとき
-  Node *if_false; // kind=ND_IFにおいて，if文の条件式が偽のとき
-  int val;        // kind=ND_NUMの時の数値
-  char name;      // kind=ND_LVARの時の変数名
-  int offset;     // kind=ND_LVARの時のベースポインタからのオフセット
+  Node *lhs;        // 左辺
+  Node *rhs;        // 右辺
+  Node *cond;       // if, while, for文の条件式
+  Node *then;       // if, while, for文の条件式が真のとき
+  Node *if_else;    // if文の条件式が偽のとき
+  Node *for_init;   // for文の初期化
+  Node *for_update; // for文の更新
+  Node *block;      // {}の中の複数の式のリスト
+  int val;          // kind=ND_NUMの時の数値
+  char name;        // kind=ND_LVARの時の変数名
+  int offset;       // kind=ND_LVARの時のベースポインタからのオフセット
 };
 
+/*
+ * ローカル変数
+ */
 typedef struct LVar LVar;
 struct LVar{
   LVar *next; // リスト
@@ -63,16 +78,20 @@ struct LVar{
   int offset; // rbpからのオフセット
 };
 
+/*
+ * グローバル変数
+ */
 extern Token *token;     // 現在のトークン
 extern char *user_input; // 入力プログラム(argv)
-extern Node *node;       // 計算ノード
+extern Node *node;       // 構文解析ノード
 extern LVar *locals;     // ローカル変数
 
 /*
  * デバッグ
  */
 
-// ポインタ指定エラー用関数(使い方はprintfと同じ)
+// エラー用関数(使い方はprintfと同じ)
+// 第一引数に文字列のポインタを指定すると，その箇所を指摘する矢印を出力する．
 void error_at(char *loc, char *fmt, ...);
 
 // エラー用関数(使い方はprintfと同じ)
@@ -82,53 +101,45 @@ void error(char *fmt, ...);
  * トークナイザ
  */
 
-// 次のトークンが期待される記号であれば真を返す．
+// 次のトークンで引数の単語が存在するか否かを返す．
+// もし存在すれば，トークンを1つ進める．
 bool consume(char *op);
 
-// 次のトークンが変数であれば真を返す．
+// 次のトークンの単語が変数であれば真を返す．
 Token *consume_ident();
 
-// 次のトークンが期待される記号であれば進める．
-// consumeとの違いは，エラーを出すかどうかである．
+// 次のトークンが引数の単語でなければならない場合に用いる．
+// もし存在すれば，トークンを1つ進める．
+// 存在しないなら，エラーを出してプログラムを終了する．
 void expect(char *op);
 
-// 次のトークンが数字であればその数値を返す．
+// 次のトークンの単語が数字であればその数値を返す．
 int expect_number();
 
-// トークンがこれ以上続かないなら真を返す．
+// トークン列の最後か否かを返す．
 bool at_eof();
 
-// 次のトークンを生成する．
-Token *new_token(TokenKind kind, Token *cur, char *str, int len);
-
-// 入力されたプログラムの記号が正しいか確認する．
-bool check_symbol(char *p, char *q);
-
 // ローカル変数でその名前が以前使われたか判別する．
-// 見つかった場合，そのローカル変数のリストのポインタが返却される．
+// 見つかった場合，そのローカル変数のリストのポインタを返す．
+// 見つからなければNULLを返す．
 LVar *find_lvar(Token *token);
 
-// トークナイザ
+// トークナイズを行う．
 Token *tokenize();
 
 /*
  * 構文解析パーサ
  */
 
-// 次のノードを生成する．
-Node *new_node(NodeKind kind, Node *lhs, Node *rhs);
-
-// 次の数値ノードを生成する．
-Node *new_node_num(int val);
-
-// BNF記法による数式の構文解析
+// BNF記法による数式の構文解析を行う．
+// 構文解析結果を木構造として持ち，そのノードを返す．
 Node *program();
 
 /*
  * アセンブリ出力
  */
 
-// アセンブリ生成
+// ノードを基に，アセンブリを生成する
 void codegen(Node *node);
 
 #endif

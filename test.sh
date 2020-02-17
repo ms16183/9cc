@@ -93,7 +93,9 @@ testcase(){
   5 )
     msg "変数代入のテスト"
     try   0 "a=0; return a;"
-    try 100 "b=100; return b;"
+    try 100 "_b=100; return _b;"
+    try 100 "c1=100; return c1;"
+    try 100 "_a1b2_ = 100; return _a1b2_;"
     try  10 "z=2; return z*(z*z)+z;"
     try   6 "a=1; b=2; c=3; return c + a + b;"
     try   1 "hoge = 2; foo = 1 + hoge; return foo - hoge;"
@@ -144,6 +146,32 @@ testcase(){
       out = 3
     return out
 COMMENT
+    ;;
+
+  9 )
+    msg "while文のテスト"
+    try   3 "i = 1; while(i < 3) i = i + 1; return i;"
+    try 200 "i = 1; while(i < 100) if (i == 10) i = 200; else i = i + 1; return i;"
+    try   1 "i = 1; while (0) i = i + 1; return i;"
+    try 100 "i = 1; while ( 1 ) if (i == 100) return i; else i = i + 1;"
+    ;;
+
+  10 )
+    msg "for文のテスト"
+    try 6 "sum = 0; for(i = 1; i <= 3; i = i + 1) sum = sum + i; return sum;"
+    try 0 "sum = 5050; for(i = 100; i > 0; i = i - 1) sum = sum - i; return sum;"
+    try 3 "i = 0; for(     ;i < 3;) i = i + 1; return i;"
+    try 3 "       for(i = 0;i < 3;) i = i + 1; return i;"
+    try 4 "i = 0; for(     ;i < 3; i = i + 1) i = i + 1; return i;"
+    try 9 "n = 0; for( ; ; ) if (n == 9) return n; else n = n + 1;"
+    ;;
+
+  11 )
+    msg "ブロックのテスト"
+    try   6 "i = 0; sum = 0; while(i <= 3){sum = sum + i; i = i + 1;} return sum;"
+    try 120 "pro = 1; for(i = 1; i <= 5; i = i + 1){pro = pro * i; } return pro;"
+    try   9 "n = 0; for( ; ; ) {if (n == 9) return n; n = n + 1;}"
+    try   1 "a = 0; if(a == 0){} else return 0; return 1;"
     ;;
 
   * )

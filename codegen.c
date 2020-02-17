@@ -25,14 +25,6 @@ void store(){
   return;
 }
 
-void ret(){
-  printf("  pop rax\n");
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
-  return;
-}
-
 void generate(Node *node){
 
   static int label_num = 0;
@@ -54,6 +46,12 @@ void generate(Node *node){
       printf("  add rsp, 8\n");
       return;
       break;
+    case ND_BLOCK:
+      for(Node *n = node->block; n; n = n->next){
+        generate(n);
+      }
+      return;
+      break;
     case ND_ASSIGN:
       generate_lval(node->lhs);
       generate(node->rhs);
@@ -64,39 +62,76 @@ void generate(Node *node){
       label_num_tmp = label_num;
       label_num++;
 
-      generate(node->if_cond); // 条件式
+      generate(node->cond); // 条件式
       printf("  pop rax\n");
       printf("  cmp rax, 0\n");
 
       // elseがない場合
-      if(!node->if_false){
+      if(!node->if_else){
         printf("  je .Lend%03d\n", label_num_tmp);
-        generate(node->if_true); // 条件式が真の場合
+        generate(node->then); // 条件式が真の場合
         printf(".Lend%03d:\n", label_num_tmp);
       }
       else{
         printf("  je .Lelse%03d\n", label_num_tmp);
-        generate(node->if_true); // 条件式が真の場合
+        generate(node->then); // 条件式が真の場合
         printf("  jmp .Lend%03d\n", label_num_tmp);
         printf(".Lelse%03d:\n", label_num_tmp);
-        generate(node->if_false); // 条件式が偽の場合
+        generate(node->if_else); // 条件式が偽の場合
         printf(".Lend%03d:\n", label_num_tmp);
       }
       return;
       break;
+    case ND_WHILE:
+      label_num_tmp = label_num;
+      label_num++;
+
+      printf(".Lbegin%03d:\n", label_num_tmp);
+      generate(node->cond);
+      printf("  pop rax\n");
+      printf("  cmp rax, 0\n");
+      printf("  je .Lend%03d\n", label_num_tmp);
+      generate(node->then);
+      printf("  jmp .Lbegin%03d\n", label_num_tmp);
+      printf(".Lend%03d:\n", label_num_tmp);
+      return;
+      break;
+    case ND_FOR:
+      label_num_tmp = label_num;
+      label_num++;
+
+      if(node->for_init){
+        generate(node->for_init);
+      }
+
+      printf(".Lbegin%03d:\n", label_num_tmp);
+      if(node->cond){
+        generate(node->cond);
+        printf("  pop rax\n");
+        printf("  cmp rax, 0\n");
+        printf("  je .Lend%03d\n", label_num_tmp);
+      }
+      generate(node->then);
+      if(node->for_update){
+        generate(node->for_update);
+      }
+      printf("  jmp .Lbegin%03d\n", label_num_tmp);
+      printf(".Lend%03d:\n", label_num_tmp);
+      return;
+      break;
     case ND_RETURN:
       generate(node->lhs);
-      ret();
+      printf("  jmp .Lreturn\n");
       return;
       break;
     default:
       break;
   }
 
+  // 二項演算子
+
   generate(node->lhs);
   generate(node->rhs);
-
-  // 二項演算子
 
   printf("  pop rdi\n");
   printf("  pop rax\n");
@@ -150,14 +185,25 @@ void codegen(Node *node){
   printf("\n");
   printf("_main:\n");
 
+  // ローカル変数の数をカウントし，rbpからrspの間の確保を行う．
+  int lvar_num = 0;
+  for(LVar *var = locals; var; var = var->next){
+    lvar_num++;
+  }
+
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
+  printf("  sub rsp, %d\n", lvar_num * 8);
 
-  // セミコロンで区切って計算する．
+  // ターミネータで区切って計算する．
   for(Node *n = node; n; n = n->next){
     generate(n);
   }
+  printf(".Lreturn:\n");
+  printf("  pop rax\n");
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
+  printf("  ret\n");
   return;
 }
 

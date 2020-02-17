@@ -28,15 +28,20 @@ Node *new_node_lvar(Token *tok){
     // ローカル変数自体が登場していない場合，
     if(!locals){
       locals = (LVar*)calloc(1, sizeof(LVar));
+      locals->name = tok->str;
+      locals->len = tok->len;
+      locals->offset = 8;
+      new->offset = locals->offset;
     }
-
-    lvar = (LVar*)calloc(1, sizeof(LVar));
-    lvar->next = locals;
-    lvar->name = tok->str;
-    lvar->len = tok->len;
-    lvar->offset = locals->offset + 8;
-    new->offset = lvar->offset;
-    locals = lvar;
+    else{
+      lvar = (LVar*)calloc(1, sizeof(LVar));
+      lvar->next = locals;
+      lvar->name = tok->str;
+      lvar->len = tok->len;
+      lvar->offset = locals->offset + 8;
+      new->offset = lvar->offset;
+      locals = lvar;
+    }
   }
   return new;
 }
@@ -56,12 +61,32 @@ Node *new_node_num(int val){
 }
 
 // if else文のノードを生成する．
-Node *new_node_if(Node *if_cond, Node *if_true, Node *if_false){
+Node *new_node_if(Node *cond, Node *then, Node *if_else){
   Node *new = (Node*)calloc(1, sizeof(Node));
   new->kind = ND_IF;
-  new->if_cond = if_cond;
-  new->if_true = if_true;
-  new->if_false = if_false;
+  new->cond = cond;
+  new->then = then;
+  new->if_else = if_else;
+  return new;
+}
+
+// while文のノードを生成する．
+Node *new_node_while(Node *cond, Node *then){
+  Node *new = (Node*)calloc(1, sizeof(Node));
+  new->kind = ND_WHILE;
+  new->cond = cond;
+  new->then = then;
+  return new;
+}
+
+// for文のノードを生成する．
+Node *new_node_for(Node *for_init, Node *cond, Node *for_update, Node *then){
+  Node *new = (Node*)calloc(1, sizeof(Node));
+  new->kind = ND_FOR;
+  new->for_init = for_init;
+  new->cond = cond;
+  new->for_update = for_update;
+  new->then = then;
   return new;
 }
 
@@ -92,30 +117,88 @@ Node *program(){
 Node *stmt(){
   Node *node;
 
+  if(consume("{")){
+    // ブロックが閉じるまでの式をリスト化する．
+    Node head;
+    head.next = NULL;
+    Node *cur = &head;
+
+    while(!consume("}")){
+      cur->next = stmt();
+      cur = cur->next;
+    }
+    // ブロックであるとわかればよいので左辺値や右辺値は無くてよい．
+    node = new_node(ND_BLOCK, NULL, NULL);
+    node->block = head.next;
+    return node;
+  }
+
   if(consume("if")){
-    Node *if_cond;
-    Node *if_true;
-    Node *if_false = NULL;
+    Node *cond;
+    Node *then;
+    Node *if_else = NULL;
 
     expect("(");
-    if_cond = expr(); // 条件式
+    cond = expr(); // 条件式
     expect(")");
-    if_true = stmt(); // 条件式が真のときの処理
+    then = stmt(); // 条件式が真のときの処理
 
     if(consume("else")){
-      if_false = stmt(); // 条件式が偽のときの処理
+      if_else = stmt(); // 条件式が偽のときの処理
     }
 
-    node = new_node_if(if_cond, if_true, if_false);
+    node = new_node_if(cond, then, if_else);
+    return node;
+  }
+
+  if(consume("while")){
+    Node *cond;
+    Node *then;
+
+    expect("(");
+    cond = expr(); // 条件式
+    expect(")");
+    then = stmt(); // 条件式が真のときの処理
+
+    node = new_node_while(cond, then);
+    return node;
+  }
+
+  if(consume("for")){
+    Node *for_init = NULL;
+    Node *cond = NULL;
+    Node *for_update = NULL;
+    Node *for_then;
+
+    expect("(");
+
+    // for(;;)となっていた場合，";"を先読みする．
+    // ";"で無ければ式が存在する．
+    if(memcmp(token->str, ";", 1)){
+      for_init = expr();
+    }
+    expect(";");
+    if(memcmp(token->str, ";", 1)){
+      cond = expr();
+    }
+    expect(";");
+    if(memcmp(token->str, ")", 1)){
+      for_update = expr();
+    }
+    expect(")");
+    for_then = stmt();
+
+    node = new_node_for(for_init, cond, for_update, for_then);
     return node;
   }
 
   if(consume("return")){
     node = new_node_unary(ND_RETURN, expr());
+    expect(";");
+    return node;
   }
-  else{
-    node = new_node_unary(ND_EXPR_STMT, expr());
-  }
+
+  node = new_node_unary(ND_EXPR_STMT, expr());
   expect(";");
   return node;
 }
