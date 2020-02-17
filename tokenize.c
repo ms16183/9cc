@@ -102,6 +102,13 @@ Token *tokenize(){
       continue;
     }
 
+    // else
+    if(check_symbol(p, "else") && !is_alnum(p[4])){
+      cur = new_token(TK_RESERVED, cur, p, 4);
+      p += 4;
+      continue;
+    }
+
     // return
     if(check_symbol(p, "return") && !is_alnum(p[6])){
       cur = new_token(TK_RESERVED, cur, p, 6);

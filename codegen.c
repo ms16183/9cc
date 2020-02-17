@@ -36,6 +36,8 @@ void ret(){
 void generate(Node *node){
 
   static int label_num = 0;
+  // ラベルを同一番号にしたいものの，途中の再帰でstaticな変数の値が変わるので保存する必要がある．
+  int label_num_tmp;
 
   switch(node->kind){
     case ND_NUM:
@@ -59,13 +61,27 @@ void generate(Node *node){
       return;
       break;
     case ND_IF:
-      generate(node->lhs); // 条件式
+      label_num_tmp = label_num;
+      label_num++;
+
+      generate(node->if_cond); // 条件式
       printf("  pop rax\n");
       printf("  cmp rax, 0\n");
-      printf("  je .Lend%03d\n", label_num);
-      generate(node->rhs); // 条件式が真の場合
-      printf(".Lend%03d:\n", label_num);
-      label_num++;
+
+      // elseがない場合
+      if(!node->if_false){
+        printf("  je .Lend%03d\n", label_num_tmp);
+        generate(node->if_true); // 条件式が真の場合
+        printf(".Lend%03d:\n", label_num_tmp);
+      }
+      else{
+        printf("  je .Lelse%03d\n", label_num_tmp);
+        generate(node->if_true); // 条件式が真の場合
+        printf("  jmp .Lend%03d\n", label_num_tmp);
+        printf(".Lelse%03d:\n", label_num_tmp);
+        generate(node->if_false); // 条件式が偽の場合
+        printf(".Lend%03d:\n", label_num_tmp);
+      }
       return;
       break;
     case ND_RETURN:
