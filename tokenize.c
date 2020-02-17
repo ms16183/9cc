@@ -171,7 +171,7 @@ Token *tokenize(){
     // 変数
     if(is_alpha(*p)){
       int l = 1;
-      while(is_alnum(*(p+l))){
+      while(is_alnum(p[l])){
         l++;
       }
       cur = new_token(TK_IDENT, cur, p, l);

@@ -25,14 +25,6 @@ void store(){
   return;
 }
 
-void ret(){
-  printf("  pop rax\n");
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
-  return;
-}
-
 void generate(Node *node){
 
   static int label_num = 0;
@@ -123,7 +115,7 @@ void generate(Node *node){
       break;
     case ND_RETURN:
       generate(node->lhs);
-      ret();
+      printf("  jmp .Lreturn\n");
       return;
       break;
     default:
@@ -187,14 +179,25 @@ void codegen(Node *node){
   printf("\n");
   printf("main:\n");
 
+  // ローカル変数の数をカウントし，rbpからrspの間の確保を行う．
+  int lvar_num = 0;
+  for(LVar *var = locals; var; var = var->next){
+    lvar_num++;
+  }
+
   printf("  push rbp\n");
   printf("  mov rbp, rsp\n");
-  printf("  sub rsp, 208\n");
+  printf("  sub rsp, %d\n", lvar_num * 8);
 
   // ターミネータで区切って計算する．
   for(Node *n = node; n; n = n->next){
     generate(n);
   }
+  printf(".Lreturn:\n");
+  printf("  pop rax\n");
+  printf("  mov rsp, rbp\n");
+  printf("  pop rbp\n");
+  printf("  ret\n");
   return;
 }
 

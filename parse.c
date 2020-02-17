@@ -28,15 +28,20 @@ Node *new_node_lvar(Token *tok){
     // ローカル変数自体が登場していない場合，
     if(!locals){
       locals = (LVar*)calloc(1, sizeof(LVar));
+      locals->name = tok->str;
+      locals->len = tok->len;
+      locals->offset = 8;
+      new->offset = locals->offset;
     }
-
-    lvar = (LVar*)calloc(1, sizeof(LVar));
-    lvar->next = locals;
-    lvar->name = tok->str;
-    lvar->len = tok->len;
-    lvar->offset = locals->offset + 8;
-    new->offset = lvar->offset;
-    locals = lvar;
+    else{
+      lvar = (LVar*)calloc(1, sizeof(LVar));
+      lvar->next = locals;
+      lvar->name = tok->str;
+      lvar->len = tok->len;
+      lvar->offset = locals->offset + 8;
+      new->offset = lvar->offset;
+      locals = lvar;
+    }
   }
   return new;
 }
