@@ -56,32 +56,32 @@ Node *new_node_num(int val){
 }
 
 // if else文のノードを生成する．
-Node *new_node_if(Node *if_cond, Node *if_true, Node *if_false){
+Node *new_node_if(Node *cond, Node *then, Node *if_else){
   Node *new = (Node*)calloc(1, sizeof(Node));
   new->kind = ND_IF;
-  new->if_cond = if_cond;
-  new->if_true = if_true;
-  new->if_false = if_false;
+  new->cond = cond;
+  new->then = then;
+  new->if_else = if_else;
   return new;
 }
 
 // while文のノードを生成する．
-Node *new_node_while(Node *while_cond, Node *while_true){
+Node *new_node_while(Node *cond, Node *then){
   Node *new = (Node*)calloc(1, sizeof(Node));
   new->kind = ND_WHILE;
-  new->while_cond = while_cond;
-  new->while_true = while_true;
+  new->cond = cond;
+  new->then = then;
   return new;
 }
 
 // for文のノードを生成する．
-Node *new_node_for(Node *for_init, Node *for_cond, Node *for_update, Node *for_true){
+Node *new_node_for(Node *for_init, Node *cond, Node *for_update, Node *then){
   Node *new = (Node*)calloc(1, sizeof(Node));
   new->kind = ND_FOR;
   new->for_init = for_init;
-  new->for_cond = for_cond;
+  new->cond = cond;
   new->for_update = for_update;
-  new->for_true = for_true;
+  new->then = then;
   return new;
 }
 
@@ -113,41 +113,41 @@ Node *stmt(){
   Node *node;
 
   if(consume("if")){
-    Node *if_cond;
-    Node *if_true;
-    Node *if_false = NULL;
+    Node *cond;
+    Node *then;
+    Node *if_else = NULL;
 
     expect("(");
-    if_cond = expr(); // 条件式
+    cond = expr(); // 条件式
     expect(")");
-    if_true = stmt(); // 条件式が真のときの処理
+    then = stmt(); // 条件式が真のときの処理
 
     if(consume("else")){
-      if_false = stmt(); // 条件式が偽のときの処理
+      if_else = stmt(); // 条件式が偽のときの処理
     }
 
-    node = new_node_if(if_cond, if_true, if_false);
+    node = new_node_if(cond, then, if_else);
     return node;
   }
 
   if(consume("while")){
-    Node *while_cond;
-    Node *while_true;
+    Node *cond;
+    Node *then;
 
     expect("("); // 条件式
-    while_cond = expr();
+    cond = expr();
     expect(")"); // 条件式が真のときの処理
-    while_true = stmt();
+    then = stmt();
 
-    node = new_node_while(while_cond, while_true);
+    node = new_node_while(cond, then);
     return node;
   }
 
   if(consume("for")){
     Node * for_init = NULL;
-    Node * for_cond = NULL;
+    Node * cond = NULL;
     Node * for_update = NULL;
-    Node * for_true;
+    Node * for_then;
 
     expect("(");
 
@@ -158,16 +158,16 @@ Node *stmt(){
     }
     expect(";");
     if(memcmp(token->str, ";", 1)){
-      for_cond = expr();
+      cond = expr();
     }
     expect(";");
     if(memcmp(token->str, ")", 1)){
       for_update = expr();
     }
     expect(")");
-    for_true = stmt();
+    for_then = stmt();
 
-    node = new_node_for(for_init, for_cond, for_update, for_true);
+    node = new_node_for(for_init, cond, for_update, for_then);
     return node;
   }
 
