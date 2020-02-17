@@ -74,6 +74,17 @@ Node *new_node_while(Node *while_cond, Node *while_true){
   return new;
 }
 
+// for文のノードを生成する．
+Node *new_node_for(Node *for_init, Node *for_cond, Node *for_update, Node *for_true){
+  Node *new = (Node*)calloc(1, sizeof(Node));
+  new->kind = ND_FOR;
+  new->for_init = for_init;
+  new->for_cond = for_cond;
+  new->for_update = for_update;
+  new->for_true = for_true;
+  return new;
+}
+
 // BNFによる数式の構文解析
 Node *program();
 Node *stmt();
@@ -132,12 +143,41 @@ Node *stmt(){
     return node;
   }
 
+  if(consume("for")){
+    Node * for_init = NULL;
+    Node * for_cond = NULL;
+    Node * for_update = NULL;
+    Node * for_true;
+
+    expect("(");
+
+    // for(;;)となっていた場合，";"を先読みする．
+    // ";"で無ければ式が存在する．
+    if(memcmp(token->str, ";", 1)){
+      for_init = expr();
+    }
+    expect(";");
+    if(memcmp(token->str, ";", 1)){
+      for_cond = expr();
+    }
+    expect(";");
+    if(memcmp(token->str, ")", 1)){
+      for_update = expr();
+    }
+    expect(")");
+    for_true = stmt();
+
+    node = new_node_for(for_init, for_cond, for_update, for_true);
+    return node;
+  }
+
   if(consume("return")){
     node = new_node_unary(ND_RETURN, expr());
+    expect(";");
+    return node;
   }
-  else{
-    node = new_node_unary(ND_EXPR_STMT, expr());
-  }
+
+  node = new_node_unary(ND_EXPR_STMT, expr());
   expect(";");
   return node;
 }

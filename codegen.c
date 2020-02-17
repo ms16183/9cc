@@ -98,6 +98,29 @@ void generate(Node *node){
       printf(".Lend%03d:\n", label_num_tmp);
       return;
       break;
+    case ND_FOR:
+      label_num_tmp = label_num;
+      label_num++;
+
+      if(node->for_init){
+        generate(node->for_init);
+      }
+
+      printf(".Lbegin%03d:\n", label_num_tmp);
+      if(node->for_cond){
+        generate(node->for_cond);
+        printf("  pop rax\n");
+        printf("  cmp rax, 0\n");
+        printf("  je .Lend%03d\n", label_num_tmp);
+      }
+      generate(node->for_true);
+      if(node->for_update){
+        generate(node->for_update);
+      }
+      printf("  jmp .Lbegin%03d\n", label_num_tmp);
+      printf(".Lend%03d:\n", label_num_tmp);
+      return;
+      break;
     case ND_RETURN:
       generate(node->lhs);
       ret();
@@ -107,10 +130,10 @@ void generate(Node *node){
       break;
   }
 
+  // 二項演算子
+
   generate(node->lhs);
   generate(node->rhs);
-
-  // 二項演算子
 
   printf("  pop rdi\n");
   printf("  pop rax\n");
@@ -168,7 +191,7 @@ void codegen(Node *node){
   printf("  mov rbp, rsp\n");
   printf("  sub rsp, 208\n");
 
-  // セミコロンで区切って計算する．
+  // ターミネータで区切って計算する．
   for(Node *n = node; n; n = n->next){
     generate(n);
   }

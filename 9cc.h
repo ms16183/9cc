@@ -39,6 +39,7 @@ typedef enum{
   ND_EXPR_STMT, // 式
   ND_IF,        // if
   ND_WHILE,     // while
+  ND_FOR,       // for
   ND_RETURN,    // return
 } NodeKind;
 
@@ -53,6 +54,10 @@ struct Node{
   Node *if_false;   // kind=ND_IFにおいて，if文の条件式が偽のとき
   Node *while_cond; // kind=ND_WHILEにおいて，while文の条件式
   Node *while_true; // kind=ND_WHILEにおいて，while文の条件式が真のとき
+  Node *for_init;   // kind=ND_FORにおいて，for文の初期化
+  Node *for_cond;   // kind=ND_FORにおいて，for文の条件式
+  Node *for_update; // kind=ND_FORにおいて，for文の更新
+  Node *for_true;   // kind=ND_FORにおいて，for文の条件式が真のとき
   int val;          // kind=ND_NUMの時の数値
   char name;        // kind=ND_LVARの時の変数名
   int offset;       // kind=ND_LVARの時のベースポインタからのオフセット

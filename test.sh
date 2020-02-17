@@ -154,6 +154,17 @@ COMMENT
     try 100 "i = 1; while ( 1 ) if (i == 100) return i; else i = i + 1;"
     ;;
 
+  10 )
+    msg "for文のテスト"
+    try 6 "sum = 0; for(i = 1; i <= 3; i = i + 1) sum = sum + i; return sum;"
+    try 0 "sum = 5050; for(i = 100; i > 0; i = i - 1) sum = sum - i; return sum;"
+    try 3 "i = 0; for(     ;i < 3;) i = i + 1; return i;"
+    try 3 "       for(i = 0;i < 3;) i = i + 1; return i;"
+    try 4 "i = 0; for(     ;i < 3; i = i + 1) i = i + 1; return i;"
+    try 9 "n = 0; for( ; ; ) if (n == 9) return n; else n = n + 1;"
+
+    ;;
+
   * )
     exit 0
     ;;
