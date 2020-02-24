@@ -46,6 +46,16 @@ Node *new_node_lvar(Token *tok){
   return new;
 }
 
+// 関数ノードを生成する．
+Node *new_node_func(Token *tok){
+  Node *node = new_node(ND_FUNCALL, NULL, NULL);
+  char *buf = (char*)malloc(tok->len + 1);
+  strncpy(buf, tok->str, tok->len);
+  buf[tok->len] = '\0';
+  node->funcname = buf;
+  return node;
+}
+
 // 片方のみのノードを生成する．
 Node *new_node_unary(NodeKind kind, Node *expr){
   Node *node = new_node(kind, expr, NULL);
@@ -310,6 +320,12 @@ Node *primary(){
   // 変数or数字
   Token *tok=consume_ident();
   if(tok){
+    // 関数
+    if(consume("(")){
+      // TODO: 引数なし
+      expect(")");
+      return new_node_func(tok);
+    }
     return new_node_lvar(tok);
   }
   else{

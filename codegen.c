@@ -46,6 +46,11 @@ void generate(Node *node){
       printf("  add rsp, 8\n");
       return;
       break;
+    case ND_FUNCALL:
+      printf("  call %s\n", node->funcname);
+      printf("  push rax\n");
+      return;
+      break;
     case ND_BLOCK:
       for(Node *n = node->block; n; n = n->next){
         generate(n);

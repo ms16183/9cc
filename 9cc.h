@@ -43,6 +43,7 @@ typedef enum{
   ND_NUM,       // 数値
   ND_ASSIGN,    // 代入
   ND_EXPR_STMT, // 式
+  ND_FUNCALL,   // 関数
   ND_BLOCK,     // ブロック
   ND_IF,        // if
   ND_WHILE,     // while
@@ -63,8 +64,8 @@ struct Node{
   Node *for_update; // for文の更新
   Node *block;      // {}の中の複数の式のリスト
   int val;          // kind=ND_NUMの時の数値
-  char name;        // kind=ND_LVARの時の変数名
   int offset;       // kind=ND_LVARの時のベースポインタからのオフセット
+  char *funcname;   // 関数名
 };
 
 /*

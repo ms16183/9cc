@@ -11,7 +11,7 @@ try() {
   input="$2"
 
   ./9cc "$input" > tmp.s
-  gcc -o tmp tmp.s
+  gcc -static -o tmp tmp.s tmp2.o
   ./tmp
   actual="$?"
 
@@ -174,6 +174,12 @@ COMMENT
     try   1 "a = 0; if(a == 0){} else return 0; return 1;"
     ;;
 
+  12 )
+    msg "関数(引数なし)のテスト"
+    try   3 "return ret3();"
+    try 120 "return ret120();"
+    ;;
+
   * )
     exit 0
     ;;
@@ -182,6 +188,14 @@ COMMENT
 
   echo -e "\nOK"
 }
+
+cat <<EOF | gcc -xc -c -o tmp2.o -
+int ret3() { return 3; }
+int ret120() {return 120;}
+EOF
+
+testcase 12
+exit 0
 
 for i in {1..100} ; do
   testcase $i
