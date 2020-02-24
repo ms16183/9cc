@@ -5,7 +5,14 @@
  */
 
 // 次のノードを生成する．
-Node *new_node(NodeKind kind, Node *lhs, Node *rhs){
+Node *new_node(NodeKind kind){
+  Node *new = (Node*)calloc(1, sizeof(Node));
+  new->kind = kind;
+  return new;
+}
+
+// 二項間演算子のノードを生成する．
+Node *new_node_bin(NodeKind kind, Node *lhs, Node *rhs){
   Node *new = (Node*)calloc(1, sizeof(Node));
   new->kind = kind;
   new->lhs = lhs;
@@ -48,7 +55,7 @@ Node *new_node_lvar(Token *tok){
 
 // 関数ノードを生成する．
 Node *new_node_func(Token *tok){
-  Node *node = new_node(ND_FUNCALL, NULL, NULL);
+  Node *node = new_node(ND_FUNCALL);
   char *buf = (char*)malloc(tok->len + 1);
   strncpy(buf, tok->str, tok->len);
   buf[tok->len] = '\0';
@@ -58,7 +65,7 @@ Node *new_node_func(Token *tok){
 
 // 片方のみのノードを生成する．
 Node *new_node_unary(NodeKind kind, Node *expr){
-  Node *node = new_node(kind, expr, NULL);
+  Node *node = new_node_bin(kind, expr, NULL);
   return node;
 }
 
@@ -138,7 +145,7 @@ Node *stmt(){
       cur = cur->next;
     }
     // ブロックであるとわかればよいので左辺値や右辺値は無くてよい．
-    node = new_node(ND_BLOCK, NULL, NULL);
+    node = new_node(ND_BLOCK);
     node->block = head.next;
     return node;
   }
@@ -157,8 +164,7 @@ Node *stmt(){
       if_else = stmt(); // 条件式が偽のときの処理
     }
 
-    node = new_node_if(cond, then, if_else);
-    return node;
+    return new_node_if(cond, then, if_else);
   }
 
   if(consume("while")){
@@ -170,8 +176,7 @@ Node *stmt(){
     expect(")");
     then = stmt(); // 条件式が真のときの処理
 
-    node = new_node_while(cond, then);
-    return node;
+    return new_node_while(cond, then);
   }
 
   if(consume("for")){
@@ -184,22 +189,21 @@ Node *stmt(){
 
     // for(;;)となっていた場合，";"を先読みする．
     // ";"で無ければ式が存在する．
-    if(memcmp(token->str, ";", 1)){
+    if(!check_symbol(token->str, ";")){
       for_init = expr();
     }
     expect(";");
-    if(memcmp(token->str, ";", 1)){
+    if(!check_symbol(token->str, ";")){
       cond = expr();
     }
     expect(";");
-    if(memcmp(token->str, ")", 1)){
+    if(!check_symbol(token->str, ")")){
       for_update = expr();
     }
     expect(")");
     for_then = stmt();
 
-    node = new_node_for(for_init, cond, for_update, for_then);
-    return node;
+    return new_node_for(for_init, cond, for_update, for_then);
   }
 
   if(consume("return")){
@@ -220,7 +224,7 @@ Node *expr(){
 Node *assign(){
   Node *node = equality();
   if(consume("=")){
-    node = new_node(ND_ASSIGN, node, assign());
+    node = new_node_bin(ND_ASSIGN, node, assign());
   }
   return node;
 }
@@ -229,10 +233,10 @@ Node *equality(){
   Node *node = relational();
   while(true){
     if(consume("==")){
-      node = new_node(ND_EQ, node, relational());
+      node = new_node_bin(ND_EQ, node, relational());
     }
     else if(consume("!=")){
-      node = new_node(ND_NE, node, relational());
+      node = new_node_bin(ND_NE, node, relational());
     }
     else{
       return node;
@@ -244,18 +248,18 @@ Node *relational(){
   Node *node = add();
   while(true){
     if(consume("<=")){
-      node = new_node(ND_LE, node, add());
+      node = new_node_bin(ND_LE, node, add());
     }
     else if(consume("<")){
-      node = new_node(ND_LT, node, add());
+      node = new_node_bin(ND_LT, node, add());
     }
     else if(consume(">=")){
       // GEだが，左辺と右辺を入れ替えればLEと等価である．
-      node = new_node(ND_LE, add(), node);
+      node = new_node_bin(ND_LE, add(), node);
     }
     else if(consume(">")){
       // GTだが，左辺と右辺を入れ替えればLTと等価である．
-      node = new_node(ND_LT, add(), node);
+      node = new_node_bin(ND_LT, add(), node);
     }
     else{
       return node;
@@ -268,10 +272,10 @@ Node *add(){
 
   while(true){
     if(consume("+")){
-      node = new_node(ND_ADD, node, mul());
+      node = new_node_bin(ND_ADD, node, mul());
     }
     else if(consume("-")){
-      node = new_node(ND_SUB, node, mul());
+      node = new_node_bin(ND_SUB, node, mul());
     }
     else{
       return node;
@@ -284,10 +288,10 @@ Node *mul(){
 
   while(true){
     if(consume("*")){
-      node = new_node(ND_MUL, node, unary());
+      node = new_node_bin(ND_MUL, node, unary());
     }
     else if(consume("/")){
-      node = new_node(ND_DIV, node, unary());
+      node = new_node_bin(ND_DIV, node, unary());
     }
     else{
       return node;
@@ -298,13 +302,11 @@ Node *mul(){
 Node *unary(){
   if(consume("+")){
     // +a = 0 + a
-    Node *zero = new_node_num(0);
-    return new_node(ND_ADD, zero, unary());
+    return new_node_bin(ND_ADD, new_node_num(0), unary());
   }
   if(consume("-")){
     // -a = 0 - a
-    Node *zero = new_node_num(0);
-    return new_node(ND_SUB, zero, unary());
+    return new_node_bin(ND_SUB, new_node_num(0), unary());
   }
   return primary();
 }

@@ -11,7 +11,13 @@ try() {
   input="$2"
 
   ./9cc "$input" > tmp.s
-  gcc -static -o tmp tmp.s tmp2.o
+
+  if [ -e tmp2.o ]; then
+    gcc -static -o tmp tmp.s tmp2.o
+  else
+    gcc -static -o tmp tmp.s
+  fi
+
   ./tmp
   actual="$?"
 
@@ -27,7 +33,7 @@ out(){
   compatible="$1"
   input="$2"
   ./9cc "$input" > tmp.s
-  gcc -o tmp tmp.s
+  gcc -static -o tmp tmp.s
   ./tmp
   ret="$?"
   echo "$input -> $ret (This evalution is not checked.)"
@@ -176,8 +182,10 @@ COMMENT
 
   12 )
     msg "関数(引数なし)のテスト"
+    echo "int ret3(){return 3;} int ret120(){return 120;}" | gcc -xc -c -o tmp2.o -
     try   3 "return ret3();"
     try 120 "return ret120();"
+    rm -f tmp2.o
     ;;
 
   * )
@@ -188,14 +196,6 @@ COMMENT
 
   echo -e "\nOK"
 }
-
-cat <<EOF | gcc -xc -c -o tmp2.o -
-int ret3() { return 3; }
-int ret120() {return 120;}
-EOF
-
-testcase 12
-exit 0
 
 for i in {1..100} ; do
   testcase $i
