@@ -194,9 +194,6 @@ int ret3() { return 3; }
 int ret120() {return 120;}
 EOF
 
-testcase 12
-exit 0
-
 for i in {1..100} ; do
   testcase $i
 done

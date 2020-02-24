@@ -157,8 +157,7 @@ Node *stmt(){
       if_else = stmt(); // 条件式が偽のときの処理
     }
 
-    node = new_node_if(cond, then, if_else);
-    return node;
+    return new_node_if(cond, then, if_else);
   }
 
   if(consume("while")){
@@ -170,8 +169,7 @@ Node *stmt(){
     expect(")");
     then = stmt(); // 条件式が真のときの処理
 
-    node = new_node_while(cond, then);
-    return node;
+    return new_node_while(cond, then);
   }
 
   if(consume("for")){
@@ -184,22 +182,21 @@ Node *stmt(){
 
     // for(;;)となっていた場合，";"を先読みする．
     // ";"で無ければ式が存在する．
-    if(memcmp(token->str, ";", 1)){
+    if(!check_symbol(token->str, ";")){
       for_init = expr();
     }
     expect(";");
-    if(memcmp(token->str, ";", 1)){
+    if(!check_symbol(token->str, ";")){
       cond = expr();
     }
     expect(";");
-    if(memcmp(token->str, ")", 1)){
+    if(!check_symbol(token->str, ")")){
       for_update = expr();
     }
     expect(")");
     for_then = stmt();
 
-    node = new_node_for(for_init, cond, for_update, for_then);
-    return node;
+    return new_node_for(for_init, cond, for_update, for_then);
   }
 
   if(consume("return")){
@@ -298,13 +295,11 @@ Node *mul(){
 Node *unary(){
   if(consume("+")){
     // +a = 0 + a
-    Node *zero = new_node_num(0);
-    return new_node(ND_ADD, zero, unary());
+    return new_node(ND_ADD, new_node_num(0), unary());
   }
   if(consume("-")){
     // -a = 0 - a
-    Node *zero = new_node_num(0);
-    return new_node(ND_SUB, zero, unary());
+    return new_node(ND_SUB, new_node_num(0), unary());
   }
   return primary();
 }
