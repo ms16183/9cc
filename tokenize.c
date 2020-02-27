@@ -57,8 +57,8 @@ bool check_symbol(char *p, char *q){
 
 // ローカル変数でその名前が以前使われたか判別する．
 // 見つかった場合，そのローカル変数のリストのポインタが返却される．
-LVar *find_lvar(Token *token){
-  for(LVar *var = locals; var; var=var->next){
+Var *find_lvar(Token *token){
+  for(Var *var = locals; var; var=var->next){
     if(var->len == token->len && !memcmp(token->str, var->name, var->len)){
       return var;
     }

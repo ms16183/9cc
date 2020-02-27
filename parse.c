@@ -26,28 +26,28 @@ Node *new_node_lvar(Token *tok){
   Node *new = (Node*)calloc(1, sizeof(Node));
   new->kind = ND_LVAR;
 
-  LVar *lvar = find_lvar(tok);
-  if(lvar){
-    new->offset = lvar->offset;
+  Var *var = find_lvar(tok);
+  if(var){
+    new->offset = var->offset;
   }
   // 新しく出現した変数名の場合，リストに追加する．
   else{
     // ローカル変数自体が登場していない場合，
     if(!locals){
-      locals = (LVar*)calloc(1, sizeof(LVar));
+      locals = (Var*)calloc(1, sizeof(Var));
       locals->name = tok->str;
       locals->len = tok->len;
       locals->offset = 8;
       new->offset = locals->offset;
     }
     else{
-      lvar = (LVar*)calloc(1, sizeof(LVar));
-      lvar->next = locals;
-      lvar->name = tok->str;
-      lvar->len = tok->len;
-      lvar->offset = locals->offset + 8;
-      new->offset = lvar->offset;
-      locals = lvar;
+      var = (Var*)calloc(1, sizeof(Var));
+      var->next = locals;
+      var->name = tok->str;
+      var->len = tok->len;
+      var->offset = locals->offset + 8;
+      new->offset = var->offset;
+      locals = var;
     }
   }
   return new;
@@ -343,7 +343,6 @@ Node *primary(){
       Node *node = new_node_func(tok);
       // 引数
       node->args = fargs();
-      node->body = 1;
       return node;
     }
     return new_node_lvar(tok);

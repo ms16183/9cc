@@ -70,24 +70,20 @@ struct Node{
 };
 
 /*
- * ローカル変数
+ * 変数
  */
-typedef struct LVar LVar;
-struct LVar{
-  LVar *next; // リスト
+typedef struct Var Var;
+struct Var{
+  Var *next;
   char *name; // 変数名
   int len;    // 変数名の長さ
-  int offset; // rbpからのオフセット
+  int offset; // オフセット
 };
 
-/*
- * グローバル変数
- */
 extern Token *token;     // 現在のトークン
 extern char *user_input; // 入力プログラム(argv)
 extern Node *node;       // 構文解析ノード
-extern LVar *locals;     // ローカル変数
-
+extern Var *locals;      // ローカル変数
 /*
  * デバッグ
  */
@@ -127,7 +123,7 @@ bool check_symbol(char *p, char *q);
 // ローカル変数でその名前が以前使われたか判別する．
 // 見つかった場合，そのローカル変数のリストのポインタを返す．
 // 見つからなければNULLを返す．
-LVar *find_lvar(Token *token);
+Var *find_lvar(Token *token);
 
 // トークナイズを行う．
 Token *tokenize();

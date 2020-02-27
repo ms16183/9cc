@@ -195,7 +195,7 @@ void codegen(Node *node){
 
   // ローカル変数の数をカウントし，rbpからrspの間の確保を行う．
   int lvar_num = 0;
-  for(LVar *var = locals; var; var = var->next){
+  for(Var *var = locals; var; var = var->next){
     lvar_num++;
   }
 
