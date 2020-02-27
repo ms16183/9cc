@@ -175,6 +175,13 @@ Token *tokenize(){
       continue;
     }
 
+    // カンマ演算子
+    if(check_symbol(p, ",")){
+      cur = new_token(TK_RESERVED, cur, p, 1);
+      p++;
+      continue;
+    }
+
     // 変数
     if(is_alpha(*p)){
       int l = 1;

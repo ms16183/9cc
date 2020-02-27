@@ -117,6 +117,7 @@ Node *relational();
 Node *add();
 Node *mul();
 Node *unary();
+Node *fargs();
 Node *primary();
 
 Node *program(){
@@ -311,6 +312,21 @@ Node *unary(){
   return primary();
 }
 
+Node *fargs(){
+  if(consume(")")){
+    return NULL;
+  }
+  Node *head = assign();
+  Node *cur = head;
+
+  while(consume(",")){
+    cur->next = assign();
+    cur = cur->next;
+  }
+  expect(")");
+  return head;
+}
+
 Node *primary(){
 
   if(consume("(")){
@@ -324,9 +340,11 @@ Node *primary(){
   if(tok){
     // 関数
     if(consume("(")){
-      // TODO: 引数なし
-      expect(")");
-      return new_node_func(tok);
+      Node *node = new_node_func(tok);
+      // 引数
+      node->args = fargs();
+      node->body = 1;
+      return node;
     }
     return new_node_lvar(tok);
   }

@@ -188,6 +188,16 @@ COMMENT
     rm -f tmp2.o
     ;;
 
+  13 )
+    msg "関数(引数あり)のテスト"
+    echo "int x2(int a){return 2*a;} int add(int a, int b, int c){return a+b+c;}" | gcc -xc -c -o tmp2.o -
+    try 10 "n = 5; ret = x2(n); return ret;"
+    try 14 "n = 7; ret = x2(n); return ret;"
+    try  6 "return add(2, 3, 1);"
+    try  5 "return add(3, 3, -1);"
+    rm -f tmp2.o
+    ;;
+
   * )
     exit 0
     ;;

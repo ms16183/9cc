@@ -53,7 +53,7 @@ typedef enum{
 
 typedef struct Node Node;
 struct Node{
-  NodeKind kind; // ノードの種類
+  NodeKind kind;    // ノードの種類
   Node *next;
   Node *lhs;        // 左辺
   Node *rhs;        // 右辺
@@ -63,6 +63,7 @@ struct Node{
   Node *for_init;   // for文の初期化
   Node *for_update; // for文の更新
   Node *block;      // {}の中の複数の式のリスト
+  Node *args;       // 関数の引数
   int val;          // kind=ND_NUMの時の数値
   int offset;       // kind=ND_LVARの時のベースポインタからのオフセット
   char *funcname;   // 関数名
