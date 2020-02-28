@@ -56,7 +56,7 @@ void generate(Node *node){
       for(int i = nargs-1; i >= 0; i--){
         printf("  pop %s\n", poparg[i]);
       }
-      printf("  call %s\n", node->funcname);
+      printf("  call _%s\n", node->funcname);
       printf("  push rax\n");
 
       return;

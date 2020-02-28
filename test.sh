@@ -13,9 +13,9 @@ try() {
   ./9cc "$input" > tmp.s
 
   if [ -e tmp2.o ]; then
-    gcc -static -o tmp tmp.s tmp2.o
+    gcc -o tmp tmp.s tmp2.o
   else
-    gcc -static -o tmp tmp.s
+    gcc -o tmp tmp.s
   fi
 
   ./tmp
