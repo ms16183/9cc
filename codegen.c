@@ -28,36 +28,48 @@ void store(){
 void generate(Node *node){
 
   static int label_num = 0;
-  // ラベルを同一番号にしたいものの，途中の再帰でstaticな変数の値が変わるので保存する必要がある．
   int label_num_tmp;
+
+  int nargs = 0;
+  const char *poparg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9",
+                          "r10", "r11", "r12", "r13", "r14", "r15"};
 
   switch(node->kind){
     case ND_NUM:
       printf("  push %d\n", node->val);
       return;
-      break;
     case ND_LVAR:
       generate_lval(node);
       load();
       return;
-      break;
     case ND_EXPR_STMT:
       generate(node->lhs);
       printf("  add rsp, 8\n");
       return;
-      break;
+    case ND_FUNCALL:
+      nargs = 0;
+      for(Node *a = node->args; a; a = a->next){
+        generate(a);
+        nargs++;
+      }
+
+      for(int i = nargs-1; i >= 0; i--){
+        printf("  pop %s\n", poparg[i]);
+      }
+      printf("  call %s\n", node->funcname);
+      printf("  push rax\n");
+
+      return;
     case ND_BLOCK:
       for(Node *n = node->block; n; n = n->next){
         generate(n);
       }
       return;
-      break;
     case ND_ASSIGN:
       generate_lval(node->lhs);
       generate(node->rhs);
       store();
       return;
-      break;
     case ND_IF:
       label_num_tmp = label_num;
       label_num++;
@@ -81,7 +93,6 @@ void generate(Node *node){
         printf(".Lend%03d:\n", label_num_tmp);
       }
       return;
-      break;
     case ND_WHILE:
       label_num_tmp = label_num;
       label_num++;
@@ -95,7 +106,6 @@ void generate(Node *node){
       printf("  jmp .Lbegin%03d\n", label_num_tmp);
       printf(".Lend%03d:\n", label_num_tmp);
       return;
-      break;
     case ND_FOR:
       label_num_tmp = label_num;
       label_num++;
@@ -118,12 +128,10 @@ void generate(Node *node){
       printf("  jmp .Lbegin%03d\n", label_num_tmp);
       printf(".Lend%03d:\n", label_num_tmp);
       return;
-      break;
     case ND_RETURN:
       generate(node->lhs);
       printf("  jmp .Lreturn\n");
       return;
-      break;
     default:
       break;
   }
@@ -187,7 +195,7 @@ void codegen(Node *node){
 
   // ローカル変数の数をカウントし，rbpからrspの間の確保を行う．
   int lvar_num = 0;
-  for(LVar *var = locals; var; var = var->next){
+  for(Var *var = locals; var; var = var->next){
     lvar_num++;
   }
 

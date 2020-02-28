@@ -11,7 +11,13 @@ try() {
   input="$2"
 
   ./9cc "$input" > tmp.s
-  gcc -o tmp tmp.s
+
+  if [ -e tmp2.o ]; then
+    gcc -static -o tmp tmp.s tmp2.o
+  else
+    gcc -static -o tmp tmp.s
+  fi
+
   ./tmp
   actual="$?"
 
@@ -27,7 +33,7 @@ out(){
   compatible="$1"
   input="$2"
   ./9cc "$input" > tmp.s
-  gcc -o tmp tmp.s
+  gcc -static -o tmp tmp.s
   ./tmp
   ret="$?"
   echo "$input -> $ret (This evalution is not checked.)"
@@ -172,6 +178,24 @@ COMMENT
     try 120 "pro = 1; for(i = 1; i <= 5; i = i + 1){pro = pro * i; } return pro;"
     try   9 "n = 0; for( ; ; ) {if (n == 9) return n; n = n + 1;}"
     try   1 "a = 0; if(a == 0){} else return 0; return 1;"
+    ;;
+
+  12 )
+    msg "関数(引数なし)のテスト"
+    echo "int ret3(){return 3;} int ret120(){return 120;}" | gcc -xc -c -o tmp2.o -
+    try   3 "return ret3();"
+    try 120 "return ret120();"
+    rm -f tmp2.o
+    ;;
+
+  13 )
+    msg "関数(引数あり)のテスト"
+    echo "int x2(int a){return 2*a;} int add(int a, int b, int c){return a+b+c;}" | gcc -xc -c -o tmp2.o -
+    try 10 "n = 5; ret = x2(n); return ret;"
+    try 14 "n = 7; ret = x2(n); return ret;"
+    try  6 "return add(2, 3, 1);"
+    try  5 "return add(3, 3, -1);"
+    rm -f tmp2.o
     ;;
 
   * )

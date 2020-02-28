@@ -43,6 +43,7 @@ typedef enum{
   ND_NUM,       // 数値
   ND_ASSIGN,    // 代入
   ND_EXPR_STMT, // 式
+  ND_FUNCALL,   // 関数
   ND_BLOCK,     // ブロック
   ND_IF,        // if
   ND_WHILE,     // while
@@ -52,7 +53,7 @@ typedef enum{
 
 typedef struct Node Node;
 struct Node{
-  NodeKind kind; // ノードの種類
+  NodeKind kind;    // ノードの種類
   Node *next;
   Node *lhs;        // 左辺
   Node *rhs;        // 右辺
@@ -62,30 +63,27 @@ struct Node{
   Node *for_init;   // for文の初期化
   Node *for_update; // for文の更新
   Node *block;      // {}の中の複数の式のリスト
+  Node *args;       // 関数の引数
   int val;          // kind=ND_NUMの時の数値
-  char name;        // kind=ND_LVARの時の変数名
   int offset;       // kind=ND_LVARの時のベースポインタからのオフセット
+  char *funcname;   // 関数名
 };
 
 /*
- * ローカル変数
+ * 変数
  */
-typedef struct LVar LVar;
-struct LVar{
-  LVar *next; // リスト
+typedef struct Var Var;
+struct Var{
+  Var *next;
   char *name; // 変数名
   int len;    // 変数名の長さ
-  int offset; // rbpからのオフセット
+  int offset; // オフセット
 };
 
-/*
- * グローバル変数
- */
 extern Token *token;     // 現在のトークン
 extern char *user_input; // 入力プログラム(argv)
 extern Node *node;       // 構文解析ノード
-extern LVar *locals;     // ローカル変数
-
+extern Var *locals;      // ローカル変数
 /*
  * デバッグ
  */
@@ -119,10 +117,13 @@ int expect_number();
 // トークン列の最後か否かを返す．
 bool at_eof();
 
+// 今の文字が第2引数と等しいかを確認する．
+bool check_symbol(char *p, char *q);
+
 // ローカル変数でその名前が以前使われたか判別する．
 // 見つかった場合，そのローカル変数のリストのポインタを返す．
 // 見つからなければNULLを返す．
-LVar *find_lvar(Token *token);
+Var *find_lvar(Token *token);
 
 // トークナイズを行う．
 Token *tokenize();
