@@ -30,7 +30,7 @@ void expect(char *op){
 
 char *expect_ident(){
   if(token->kind != TK_IDENT){
-    error_at(token->str, "'変数'を期待しています．");
+    error_at(token->str, "識別子を期待しています．");
   }
   char *buf = (char*)malloc(token->len + 1);
   strncpy(buf, token->str, token->len);
@@ -182,7 +182,7 @@ Token *tokenize(){
       continue;
     }
 
-    // 変数
+    // 変数，関数
     if(is_alpha(*p)){
       int l = 1;
       while(is_alnum(p[l])){

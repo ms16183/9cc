@@ -5,6 +5,7 @@ int label_num = 0;
 char *funcname;
 const char *reg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9",
                      "r10", "r11", "r12", "r13", "r14", "r15"};
+const int reglen = (int)sizeof(reg)/sizeof(char*);
 
 void generate_val(Node *node){
   if(node->kind != ND_VAR){
@@ -34,7 +35,6 @@ void store(){
 void generate(Node *node){
 
   int label_num_tmp;
-
   int nargs = 0;
 
   switch(node->kind){
@@ -56,7 +56,7 @@ void generate(Node *node){
         nargs++;
       }
 
-      for(int i = nargs-1; i >= 0; i--){
+      for(int i = nargs-1; i >= 0 && i < reglen; i--){
         printf("  pop %s\n", reg[i]);
       }
 
@@ -197,22 +197,29 @@ void codegen(Func *func){
   // 関数
   for(Func *f=func; f; f=f->next){
 
+    // スタック確保
+    int offset = 0;
+    for(VarList *vl = f->locals; vl; vl = vl->next){
+      offset += 8;
+      vl->var->offset = offset;
+    }
+    f->stack_size = offset;
+
     // 宣言
     funcname = f->name;
     printf(".global %s\n", funcname);
     printf("%s:\n", funcname);
 
-    // スタック確保
+    // スタック移動
     printf("  push rbp\n");
     printf("  mov rbp, rsp\n");
     printf("  sub rsp, %d\n", f->stack_size);
 
-    // 変数確保
+    // 変数設定
     int i = 0;
-    for(VarList *vl=f->params; vl; vl=vl->next){
+    for(VarList *vl = f->params; vl && i < reglen; vl = vl->next, i++){
       Var *var = vl->var;
       printf(" mov [rbp-%d], %s\n", var->offset, reg[i]);
-      i++;
     }
 
     // ターミネータで区切られたノードを計算する．

@@ -37,6 +37,7 @@ struct Var{
   int offset; // オフセット
 };
 
+// 変数リスト
 typedef struct VarList VarList;
 struct VarList{
   VarList *next;
@@ -44,7 +45,7 @@ struct VarList{
 };
 
 /*
- * 構文解析用ノード
+ * ノード
  */
 typedef enum{
   ND_ADD,       // +
@@ -103,7 +104,6 @@ struct Func{
 
 extern Token *token;     // 現在のトークン
 extern char *user_input; // 入力プログラム(argv)
-//extern VarList *locals;  // ローカル変数
 
 /*
  * デバッグ

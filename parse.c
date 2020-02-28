@@ -8,10 +8,10 @@ VarList *locals;
 
 // ローカル変数でその名前が以前使われたか判別する．
 // 見つかった場合，そのローカル変数のリストのポインタが返却される．
-Var *find_var(Token *token){
+Var *find_var(Token *tok){
   for(VarList *vl = locals; vl; vl=vl->next){
     Var *var = vl->var;
-    if(strlen(var->name) == token->len && !memcmp(token->str, var->name, token->len)){
+    if(strlen(var->name) == tok->len && !memcmp(tok->str, var->name, tok->len)){
       return var;
     }
   }
@@ -44,6 +44,7 @@ Node *new_node_var(Var *var){
 
 Var *push_var(char *name, int len){
 
+  // 名前コピー
   char *buf = (char*)malloc(len+1);
   strncpy(buf, name, len);
   buf[len] = '\0';
@@ -60,9 +61,12 @@ Var *push_var(char *name, int len){
 // 関数ノードを生成する．
 Node *new_node_func(Token *tok){
   Node *node = new_node(ND_FUNCALL);
+
+  // 名前コピー
   char *buf = (char*)malloc(tok->len + 1);
   strncpy(buf, tok->str, tok->len);
   buf[tok->len] = '\0';
+
   node->funcname = buf;
   return node;
 }
@@ -384,7 +388,7 @@ Node *primary(){
   }
 
   // 変数or関数
-  Token *tok=consume_ident();
+  Token *tok = consume_ident();
   if(tok){
     // 関数
     if(consume("(")){
