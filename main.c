@@ -2,8 +2,7 @@
 
 Token *token;     // トークン
 char *user_input; // 入力プログラム(argv)
-Node *node;       // 計算ノード
-Var *locals;      // ローカル変数
+//VarList *locals;  // ローカル変数
 
 int main(int argc, char **argv){
 
@@ -11,14 +10,25 @@ int main(int argc, char **argv){
     error("Usage: ./9cc code\n");
     return 1;
   }
+  Func *func;       // 関数
 
   // トークナイズ & 構文解析．
   user_input = argv[1];
   token = tokenize();
-  node = program();
+  func = program();
+
+  int offset;
+  for(Func *f=func; f; f=f->next){
+    offset = 0;
+    for(VarList *vl = f->locals; vl; vl=vl->next){
+      offset += 8;
+      vl->var->offset = offset;
+    }
+    f->stack_size = offset;
+  }
 
   // アセンブリ生成(標準出力)
-  codegen(node);
+  codegen(func);
 
   return 0;
 }

@@ -1,11 +1,17 @@
 #include "9cc.h"
 
-void generate_lval(Node *node){
-  if(node->kind != ND_LVAR){
-    error("左辺値が変数ではありません．\n");
+int label_num = 0;
+
+char *funcname;
+const char *reg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9",
+                     "r10", "r11", "r12", "r13", "r14", "r15"};
+
+void generate_val(Node *node){
+  if(node->kind != ND_VAR){
+    error("変数ではありません．\n");
   }
 
-  printf("  lea rax, [rbp-%d]\n", node->offset);
+  printf("  lea rax, [rbp-%d]\n", node->var->offset);
   printf("  push rax\n");
   return;
 }
@@ -27,19 +33,16 @@ void store(){
 
 void generate(Node *node){
 
-  static int label_num = 0;
   int label_num_tmp;
 
   int nargs = 0;
-  const char *poparg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9",
-                          "r10", "r11", "r12", "r13", "r14", "r15"};
 
   switch(node->kind){
     case ND_NUM:
       printf("  push %d\n", node->val);
       return;
-    case ND_LVAR:
-      generate_lval(node);
+    case ND_VAR:
+      generate_val(node);
       load();
       return;
     case ND_EXPR_STMT:
@@ -54,11 +57,11 @@ void generate(Node *node){
       }
 
       for(int i = nargs-1; i >= 0; i--){
-        printf("  pop %s\n", poparg[i]);
+        printf("  pop %s\n", reg[i]);
       }
+
       printf("  call %s\n", node->funcname);
       printf("  push rax\n");
-
       return;
     case ND_BLOCK:
       for(Node *n = node->block; n; n = n->next){
@@ -66,7 +69,7 @@ void generate(Node *node){
       }
       return;
     case ND_ASSIGN:
-      generate_lval(node->lhs);
+      generate_val(node->lhs);
       generate(node->rhs);
       store();
       return;
@@ -130,7 +133,8 @@ void generate(Node *node){
       return;
     case ND_RETURN:
       generate(node->lhs);
-      printf("  jmp .Lreturn\n");
+      printf("  pop rax\n");
+      printf("  jmp .Lreturn.%s\n", funcname);
       return;
     default:
       break;
@@ -182,36 +186,44 @@ void generate(Node *node){
       break;
   }
 
-  // スタックトップに計算結果を置く．
   printf("  push rax\n");
   return;
 }
 
-void codegen(Node *node){
+void codegen(Func *func){
+
   printf(".intel_syntax noprefix\n");
-  printf(".global main\n");
-  printf("\n");
-  printf("main:\n");
 
-  // ローカル変数の数をカウントし，rbpからrspの間の確保を行う．
-  int lvar_num = 0;
-  for(Var *var = locals; var; var = var->next){
-    lvar_num++;
+  // 関数
+  for(Func *f=func; f; f=f->next){
+
+    // 宣言
+    funcname = f->name;
+    printf(".global %s\n", funcname);
+    printf("%s:\n", funcname);
+
+    // スタック確保
+    printf("  push rbp\n");
+    printf("  mov rbp, rsp\n");
+    printf("  sub rsp, %d\n", f->stack_size);
+
+    // 変数確保
+    int i = 0;
+    for(VarList *vl=f->params; vl; vl=vl->next){
+      Var *var = vl->var;
+      printf(" mov [rbp-%d], %s\n", var->offset, reg[i]);
+      i++;
+    }
+
+    // ターミネータで区切られたノードを計算する．
+    for(Node *n = f->node; n; n = n->next){
+      generate(n);
+    }
+
+    printf(".Lreturn.%s:\n", funcname);
+    printf("  mov rsp, rbp\n");
+    printf("  pop rbp\n");
+    printf("  ret\n");
   }
-
-  printf("  push rbp\n");
-  printf("  mov rbp, rsp\n");
-  printf("  sub rsp, %d\n", lvar_num * 8);
-
-  // ターミネータで区切って計算する．
-  for(Node *n = node; n; n = n->next){
-    generate(n);
-  }
-  printf(".Lreturn:\n");
-  printf("  pop rax\n");
-  printf("  mov rsp, rbp\n");
-  printf("  pop rbp\n");
-  printf("  ret\n");
-  return;
 }
 
