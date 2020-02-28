@@ -200,7 +200,7 @@ COMMENT
     try 30 "main(){return ret30();} ret30(){return x2(15);} x2(a){return 2*a;}"
     try 10 "x2(n){return n + n;} main(){return x2(5);}"
     try 24 "main(){n=4; return fac(n);} fac(n){ if(n==1){return 1;} return n * fac(n-1); }"
-    try 55 "main(){return fib(10);} fib(n){ if(n==1){return 1;} if(n==0){return 0;}return fib(n-2)+fib(n-1); }"
+    try 55 "main(){return fib(10);} fib(n){ if(n<=1){return n;}return fib(n-2)+fib(n-1); }"
     ;;
 
   * )

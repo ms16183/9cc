@@ -42,15 +42,18 @@ Node *new_node_var(Var *var){
   return new;
 }
 
-Var *push_var(char *name, int len){
-
-  // 名前コピー
-  char *buf = (char*)malloc(len+1);
+// 終端にヌル文字を付与してコピーする．
+char *cpy_nullc(char *name, int len){
+  char *buf = (char*)calloc(1, len+1);
   strncpy(buf, name, len);
   buf[len] = '\0';
+  return buf;
+}
+
+Var *push_var(char *name){
 
   Var *new = (Var*)calloc(1, sizeof(Var));
-  new->name = buf;
+  new->name = name;
   VarList *vl = (VarList*)calloc(1, sizeof(VarList));
   vl->var = new;
   vl->next = locals;
@@ -59,15 +62,10 @@ Var *push_var(char *name, int len){
 }
 
 // 関数ノードを生成する．
-Node *new_node_func(Token *tok){
+Node *new_node_func(Token *tok, Node *args){
   Node *node = new_node(ND_FUNCALL);
-
-  // 名前コピー
-  char *buf = (char*)malloc(tok->len + 1);
-  strncpy(buf, tok->str, tok->len);
-  buf[tok->len] = '\0';
-
-  node->funcname = buf;
+  node->funcname = cpy_nullc(tok->str, tok->len);
+  node->args = args;
   return node;
 }
 
@@ -147,15 +145,13 @@ VarList *read_func_params(){
   }
 
   VarList *head = (VarList*)calloc(1, sizeof(VarList));
-  char *name = expect_ident();
-  head->var = push_var(name, strlen(name));
+  head->var = push_var(expect_ident());
   VarList *cur = head;
 
   while(!consume(")")){
     expect(",");
     cur->next = (VarList*)calloc(1, sizeof(VarList));
-    char *name = expect_ident();
-    cur->next->var = push_var(name, strlen(name));
+    cur->next->var = push_var(expect_ident());
     cur = cur->next;
   }
   return head;
@@ -392,15 +388,12 @@ Node *primary(){
   if(tok){
     // 関数
     if(consume("(")){
-      Node *node = new_node_func(tok);
-      // 引数
-      node->args = fargs();
-      return node;
+      return new_node_func(tok, fargs());
     }
     // 変数
     Var *var = find_var(tok);
     if(!var){
-      var = push_var(tok->str, tok->len);
+      var = push_var(cpy_nullc(tok->str, tok->len));
     }
     return new_node_var(var);
   }
