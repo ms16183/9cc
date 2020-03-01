@@ -4,6 +4,20 @@
  * 構文解析パーサ
  */
 
+VarList *locals;
+
+// ローカル変数でその名前が以前使われたか判別する．
+// 見つかった場合，そのローカル変数のリストのポインタが返却される．
+Var *find_var(Token *tok){
+  for(VarList *vl = locals; vl; vl=vl->next){
+    Var *var = vl->var;
+    if(strlen(var->name) == tok->len && !memcmp(tok->str, var->name, tok->len)){
+      return var;
+    }
+  }
+  return NULL;
+}
+
 // 次のノードを生成する．
 Node *new_node(NodeKind kind){
   Node *new = (Node*)calloc(1, sizeof(Node));
@@ -21,45 +35,37 @@ Node *new_node_bin(NodeKind kind, Node *lhs, Node *rhs){
 }
 
 // 変数ノードを生成する．
-Node *new_node_lvar(Token *tok){
-
+Node *new_node_var(Var *var){
   Node *new = (Node*)calloc(1, sizeof(Node));
-  new->kind = ND_LVAR;
+  new->kind = ND_VAR;
+  new->var = var;
+  return new;
+}
 
-  Var *var = find_lvar(tok);
-  if(var){
-    new->offset = var->offset;
-  }
-  // 新しく出現した変数名の場合，リストに追加する．
-  else{
-    // ローカル変数自体が登場していない場合，
-    if(!locals){
-      locals = (Var*)calloc(1, sizeof(Var));
-      locals->name = tok->str;
-      locals->len = tok->len;
-      locals->offset = 8;
-      new->offset = locals->offset;
-    }
-    else{
-      var = (Var*)calloc(1, sizeof(Var));
-      var->next = locals;
-      var->name = tok->str;
-      var->len = tok->len;
-      var->offset = locals->offset + 8;
-      new->offset = var->offset;
-      locals = var;
-    }
-  }
+// 終端にヌル文字を付与してコピーする．
+char *cpy_nullc(char *name, int len){
+  char *buf = (char*)calloc(1, len+1);
+  strncpy(buf, name, len);
+  buf[len] = '\0';
+  return buf;
+}
+
+Var *push_var(char *name){
+
+  Var *new = (Var*)calloc(1, sizeof(Var));
+  new->name = name;
+  VarList *vl = (VarList*)calloc(1, sizeof(VarList));
+  vl->var = new;
+  vl->next = locals;
+  locals = vl;
   return new;
 }
 
 // 関数ノードを生成する．
-Node *new_node_func(Token *tok){
+Node *new_node_func(Token *tok, Node *args){
   Node *node = new_node(ND_FUNCALL);
-  char *buf = (char*)malloc(tok->len + 1);
-  strncpy(buf, tok->str, tok->len);
-  buf[tok->len] = '\0';
-  node->funcname = buf;
+  node->funcname = cpy_nullc(tok->str, tok->len);
+  node->args = args;
   return node;
 }
 
@@ -108,7 +114,8 @@ Node *new_node_for(Node *for_init, Node *cond, Node *for_update, Node *then){
 }
 
 // BNFによる数式の構文解析
-Node *program();
+Func *program();
+Func *function();
 Node *stmt();
 Node *expr();
 Node *assign();
@@ -120,16 +127,57 @@ Node *unary();
 Node *fargs();
 Node *primary();
 
-Node *program(){
-  Node head;
+Func *program(){
+  Func head;
   head.next = NULL;
-  Node *cur = &head;
+  Func *cur = &head;
 
   while(!at_eof()){
-    cur->next = stmt();
+    cur->next = function();
     cur = cur->next;
   }
   return head.next;
+}
+
+VarList *read_func_params(){
+  if(consume(")")){
+    return NULL;
+  }
+
+  VarList *head = (VarList*)calloc(1, sizeof(VarList));
+  head->var = push_var(expect_ident());
+  VarList *cur = head;
+
+  while(!consume(")")){
+    expect(",");
+    cur->next = (VarList*)calloc(1, sizeof(VarList));
+    cur->next->var = push_var(expect_ident());
+    cur = cur->next;
+  }
+  return head;
+}
+
+Func *function(){
+  locals = NULL;
+  Func *f = (Func*)calloc(1, sizeof(Func));
+  f->name = expect_ident();
+
+  expect("(");
+
+  f->params = read_func_params();
+  expect("{");
+
+  Node head;
+  head.next = NULL;
+  Node *cur = &head;
+  while(!consume("}")){
+    cur->next = stmt();
+    cur = cur->next;
+  }
+
+  f->node = head.next;
+  f->locals = locals;
+  return f;
 }
 
 Node *stmt(){
@@ -335,20 +383,21 @@ Node *primary(){
     return node;
   }
 
-  // 変数or数字
-  Token *tok=consume_ident();
+  // 変数or関数
+  Token *tok = consume_ident();
   if(tok){
     // 関数
     if(consume("(")){
-      Node *node = new_node_func(tok);
-      // 引数
-      node->args = fargs();
-      return node;
+      return new_node_func(tok, fargs());
     }
-    return new_node_lvar(tok);
+    // 変数
+    Var *var = find_var(tok);
+    if(!var){
+      var = push_var(cpy_nullc(tok->str, tok->len));
+    }
+    return new_node_var(var);
   }
-  else{
-    return new_node_num(expect_number());
-  }
+  // 数値
+  return new_node_num(expect_number());
 }
 

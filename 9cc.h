@@ -28,7 +28,24 @@ struct Token{
 };
 
 /*
- * 構文解析用ノード
+ * 変数
+ */
+typedef struct Var Var;
+struct Var{
+  char *name; // 変数名
+  int len;    // 変数名の長さ
+  int offset; // オフセット
+};
+
+// 変数リスト
+typedef struct VarList VarList;
+struct VarList{
+  VarList *next;
+  Var *var;
+};
+
+/*
+ * ノード
  */
 typedef enum{
   ND_ADD,       // +
@@ -39,7 +56,7 @@ typedef enum{
   ND_NE,        // !=
   ND_LT,        // <
   ND_LE,        // <=
-  ND_LVAR,      // ローカル変数
+  ND_VAR,       // 変数
   ND_NUM,       // 数値
   ND_ASSIGN,    // 代入
   ND_EXPR_STMT, // 式
@@ -64,26 +81,30 @@ struct Node{
   Node *for_update; // for文の更新
   Node *block;      // {}の中の複数の式のリスト
   Node *args;       // 関数の引数
+  Var *var;         // kind=ND_VARの時の変数
   int val;          // kind=ND_NUMの時の数値
-  int offset;       // kind=ND_LVARの時のベースポインタからのオフセット
+  int offset;       // kind=ND_VARの時のベースポインタからのオフセット
   char *funcname;   // 関数名
 };
 
 /*
- * 変数
+ * 関数
  */
-typedef struct Var Var;
-struct Var{
-  Var *next;
-  char *name; // 変数名
-  int len;    // 変数名の長さ
-  int offset; // オフセット
+typedef struct Func Func;
+struct Func{
+  Func *next;
+  char *name;
+  VarList *params;
+  Node *node;
+  VarList *locals;
+  int stack_size;
 };
+
+
 
 extern Token *token;     // 現在のトークン
 extern char *user_input; // 入力プログラム(argv)
-extern Node *node;       // 構文解析ノード
-extern Var *locals;      // ローカル変数
+
 /*
  * デバッグ
  */
@@ -114,16 +135,14 @@ void expect(char *op);
 // 次のトークンの単語が数字であればその数値を返す．
 int expect_number();
 
+// 次のトークンが識別子であればその名前を返す．
+char *expect_ident();
+
 // トークン列の最後か否かを返す．
 bool at_eof();
 
 // 今の文字が第2引数と等しいかを確認する．
 bool check_symbol(char *p, char *q);
-
-// ローカル変数でその名前が以前使われたか判別する．
-// 見つかった場合，そのローカル変数のリストのポインタを返す．
-// 見つからなければNULLを返す．
-Var *find_lvar(Token *token);
 
 // トークナイズを行う．
 Token *tokenize();
@@ -134,13 +153,13 @@ Token *tokenize();
 
 // BNF記法による数式の構文解析を行う．
 // 構文解析結果を木構造として持ち，そのノードを返す．
-Node *program();
+Func *program();
 
 /*
  * アセンブリ出力
  */
 
 // ノードを基に，アセンブリを生成する
-void codegen(Node *node);
+void codegen(Func *func);
 
 #endif

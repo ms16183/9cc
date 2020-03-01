@@ -28,9 +28,20 @@ void expect(char *op){
   token = token->next;
 }
 
+char *expect_ident(){
+  if(token->kind != TK_IDENT){
+    error_at(token->str, "識別子を期待しています．");
+  }
+  char *buf = (char*)malloc(token->len + 1);
+  strncpy(buf, token->str, token->len);
+  buf[token->len] = '\0';
+  token = token->next;
+  return buf;
+}
+
 int expect_number(){
   if(token->kind != TK_NUM){
-    error_at(token->str, "数ではありません．");
+    error_at(token->str, "数を期待しています．");
   }
   int val = token->val;
   token = token->next;
@@ -53,17 +64,6 @@ Token *new_token(TokenKind kind, Token *cur, char *str, int len){
 // 入力されたプログラムの記号が正しいか確認する．
 bool check_symbol(char *p, char *q){
   return !memcmp(p, q, strlen(q));
-}
-
-// ローカル変数でその名前が以前使われたか判別する．
-// 見つかった場合，そのローカル変数のリストのポインタが返却される．
-Var *find_lvar(Token *token){
-  for(Var *var = locals; var; var=var->next){
-    if(var->len == token->len && !memcmp(token->str, var->name, var->len)){
-      return var;
-    }
-  }
-  return NULL;
 }
 
 bool is_alpha(char c){
@@ -182,7 +182,7 @@ Token *tokenize(){
       continue;
     }
 
-    // 変数
+    // 変数，関数
     if(is_alpha(*p)){
       int l = 1;
       while(is_alnum(p[l])){
