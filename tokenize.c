@@ -159,10 +159,17 @@ Token *tokenize(){
       continue;
     }
 
-    // 四則演算
+    // 四則演算，ポインタ(*)
     if(check_symbol(p, "+") || check_symbol(p, "-") ||
        check_symbol(p, "*") || check_symbol(p, "/") ||
        check_symbol(p, "(") || check_symbol(p, ")") ){
+      cur = new_token(TK_RESERVED, cur, p, 1);
+      p++;
+      continue;
+    }
+
+    // アドレス，AND
+    if(check_symbol(p, "&")){
       cur = new_token(TK_RESERVED, cur, p, 1);
       p++;
       continue;

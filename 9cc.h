@@ -66,12 +66,15 @@ typedef enum{
   ND_WHILE,     // while
   ND_FOR,       // for
   ND_RETURN,    // return
+  ND_ADDR,      // アドレス
+  ND_DEREF,     // アドレス参照
 } NodeKind;
 
 typedef struct Node Node;
 struct Node{
   NodeKind kind;    // ノードの種類
   Node *next;
+  Node *unary;      // 単項
   Node *lhs;        // 左辺
   Node *rhs;        // 右辺
   Node *cond;       // if, while, for文の条件式

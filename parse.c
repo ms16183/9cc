@@ -70,9 +70,11 @@ Node *new_node_func(Token *tok, Node *args){
 }
 
 // 片方のみのノードを生成する．
-Node *new_node_unary(NodeKind kind, Node *expr){
-  Node *node = new_node_bin(kind, expr, NULL);
-  return node;
+Node *new_node_unary(NodeKind kind, Node *unary){
+  Node *new = (Node*)calloc(1, sizeof(Node));
+  new->kind = kind;
+  new->unary = unary;
+  return new;
 }
 
 // 次の数値ノードを生成する．
@@ -356,6 +358,12 @@ Node *unary(){
   if(consume("-")){
     // -a = 0 - a
     return new_node_bin(ND_SUB, new_node_num(0), unary());
+  }
+  if(consume("&")){
+    return new_node_unary(ND_ADDR, unary());
+  }
+  if(consume("*")){
+    return new_node_unary(ND_DEREF, unary());
   }
   return primary();
 }

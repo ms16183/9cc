@@ -197,10 +197,26 @@ COMMENT
   13 )
     msg "関数のテスト"
     try  1 "main(){return ret1();} ret1(){return 1;}"
+    try  1 "main(){i=1;j=f();return i;} f(){i=2;return i;}"
     try 30 "main(){return ret30();} ret30(){return x2(15);} x2(a){return 2*a;}"
     try 10 "x2(n){return n + n;} main(){return x2(5);}"
+    try 24 "add(a, b,c){return a+b+c;} main(){return add(5+5, 10-3, 3+3+1);}"
     try 24 "main(){n=4; return fac(n);} fac(n){ if(n==1){return 1;} return n * fac(n-1); }"
     try 55 "main(){return fib(10);} fib(n){ if(n<=1){return n;}return fib(n-2)+fib(n-1); }"
+    ;;
+
+  14)
+    msg "ポインタのテスト"
+    try 1 "main(){x = 1; addr = &x; return *addr;}"
+    try 2 "main(){s1 = 1; s2 = 2; s3 = 3; addr = &s2 + 0; return *addr;}"
+    try 3 "main(){s1 = 1; s2 = 2; s3 = 3; addr = &s2 + 8; return *addr;}"
+    try 1 "main(){s1 = 1; s2 = 2; s3 = 3; addr = &s2 - 8; return *addr;}"
+    try 1 'main(){ x=1; y=&x; z=&y; return **z; }'
+    try 2 'main(){ x=1; y=2; return *(&x+8);}'
+    try 1 'main(){ x=1; y=2; return *(&y-8);}'
+    try 2 'main(){ x=1; y=&x; *y=2; return x;}'
+    try 4 'main(){ x=1; y=2; *(&x+8)=4; return y;}'
+    try 3 'main(){ x=1; y=2; *(&y-8)=3; return x;}'
     ;;
 
   * )
@@ -211,6 +227,9 @@ COMMENT
 
   echo -e "\nOK"
 }
+
+testcase 14
+exit 0
 
 for i in {1..100} ; do
   testcase $i

@@ -7,14 +7,23 @@ const char *reg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9",
                      "r10", "r11", "r12", "r13", "r14", "r15"};
 const int reglen = (int)sizeof(reg)/sizeof(char*);
 
-void generate_val(Node *node){
-  if(node->kind != ND_VAR){
-    error("変数ではありません．\n");
-  }
+void generate(Node *node);
 
-  printf("  lea rax, [rbp-%d]\n", node->var->offset);
-  printf("  push rax\n");
-  return;
+void generate_val(Node *node){
+
+  switch(node->kind){
+    case ND_VAR:
+      printf("  lea rax, [rbp-%d]\n", node->var->offset);
+      printf("  push rax\n");
+      return;
+    case ND_ADDR:
+      return;
+    case ND_DEREF:
+      generate(node->unary);
+      return;
+    default:
+      error("変数ではありません．\n");
+  }
 }
 
 void load(){
@@ -46,7 +55,7 @@ void generate(Node *node){
       load();
       return;
     case ND_EXPR_STMT:
-      generate(node->lhs);
+      generate(node->unary);
       printf("  add rsp, 8\n");
       return;
     case ND_FUNCALL:
@@ -132,9 +141,16 @@ void generate(Node *node){
       printf(".Lend%03d:\n", label_num_tmp);
       return;
     case ND_RETURN:
-      generate(node->lhs);
+      generate(node->unary);
       printf("  pop rax\n");
       printf("  jmp .Lreturn.%s\n", funcname);
+      return;
+    case ND_ADDR:
+      generate_val(node->unary);
+      return;
+    case ND_DEREF:
+      generate(node->unary);
+      load();
       return;
     default:
       break;
@@ -207,8 +223,8 @@ void codegen(Func *func){
 
     // 宣言
     funcname = f->name;
-    printf(".global %s\n", funcname);
-    printf("%s:\n", funcname);
+    printf("\n.global %s\n", funcname);
+    printf("\n%s:\n", funcname);
 
     // スタック移動
     printf("  push rbp\n");
