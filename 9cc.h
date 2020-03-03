@@ -28,6 +28,20 @@ struct Token{
 };
 
 /*
+ * 型
+ */
+typedef enum{
+  TP_INT, // int
+  TP_PTR, // ポインタ
+} TypeKind;
+
+typedef struct Type Type;
+struct Type{
+  TypeKind kind;
+  Type *base;
+};
+
+/*
  * 変数
  */
 typedef struct Var Var;
@@ -85,6 +99,7 @@ struct Node{
   Node *block;      // {}の中の複数の式のリスト
   Node *args;       // 関数の引数
   Var *var;         // kind=ND_VARの時の変数
+  Type *type;       // 型
   int val;          // kind=ND_NUMの時の数値
   int offset;       // kind=ND_VARの時のベースポインタからのオフセット
   char *funcname;   // 関数名
@@ -149,6 +164,13 @@ bool check_symbol(char *p, char *q);
 
 // トークナイズを行う．
 Token *tokenize();
+
+/*
+ * 型指定
+ */
+
+// 型を指定する．
+void add_type(Func *func);
 
 /*
  * 構文解析パーサ

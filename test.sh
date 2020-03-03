@@ -209,14 +209,14 @@ COMMENT
     msg "ポインタのテスト"
     try 1 "main(){x = 1; addr = &x; return *addr;}"
     try 2 "main(){s1 = 1; s2 = 2; s3 = 3; addr = &s2 + 0; return *addr;}"
-    try 3 "main(){s1 = 1; s2 = 2; s3 = 3; addr = &s2 + 8; return *addr;}"
-    try 1 "main(){s1 = 1; s2 = 2; s3 = 3; addr = &s2 - 8; return *addr;}"
+    try 3 "main(){s1 = 1; s2 = 2; s3 = 3; addr = &s2 + 1; return *addr;}"
+    try 1 "main(){s1 = 1; s2 = 2; s3 = 3; addr = &s2 - 1; return *addr;}"
     try 1 'main(){ x=1; y=&x; z=&y; return **z; }'
-    try 2 'main(){ x=1; y=2; return *(&x+8);}'
-    try 1 'main(){ x=1; y=2; return *(&y-8);}'
+    try 2 'main(){ x=1; y=2; return *(&x+1);}'
+    try 1 'main(){ x=1; y=2; return *(&y-1);}'
     try 2 'main(){ x=1; y=&x; *y=2; return x;}'
-    try 4 'main(){ x=1; y=2; *(&x+8)=4; return y;}'
-    try 3 'main(){ x=1; y=2; *(&y-8)=3; return x;}'
+    try 4 'main(){ x=1; y=2; *(&x+1)=4; return y;}'
+    try 3 'main(){ x=1; y=2; *(&y-1)=3; return x;}'
     ;;
 
   * )
@@ -227,9 +227,6 @@ COMMENT
 
   echo -e "\nOK"
 }
-
-testcase 14
-exit 0
 
 for i in {1..100} ; do
   testcase $i
