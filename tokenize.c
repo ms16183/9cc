@@ -4,8 +4,12 @@
  * トークナイザ
  */
 
+bool peek(char *op){
+  return !(token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len));
+}
+
 bool consume(char *op){
-  if(token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len)){
+  if(!peek(op)){
     return false;
   }
   token = token->next;
@@ -22,7 +26,7 @@ Token *consume_ident(){
 }
 
 void expect(char *op){
-  if(token->kind != TK_RESERVED || strlen(op) != token->len || memcmp(token->str, op, token->len)){
+  if(!peek(op)){
     error_at(token->str, "'%s'を期待しています．", op);
   }
   token = token->next;
@@ -159,10 +163,17 @@ Token *tokenize(){
       continue;
     }
 
-    // 四則演算
+    // 四則演算，ポインタ(*)
     if(check_symbol(p, "+") || check_symbol(p, "-") ||
        check_symbol(p, "*") || check_symbol(p, "/") ||
        check_symbol(p, "(") || check_symbol(p, ")") ){
+      cur = new_token(TK_RESERVED, cur, p, 1);
+      p++;
+      continue;
+    }
+
+    // アドレス，AND
+    if(check_symbol(p, "&")){
       cur = new_token(TK_RESERVED, cur, p, 1);
       p++;
       continue;
@@ -179,6 +190,13 @@ Token *tokenize(){
     if(check_symbol(p, ",")){
       cur = new_token(TK_RESERVED, cur, p, 1);
       p++;
+      continue;
+    }
+
+    // int
+    if(check_symbol(p, "int") && !is_alnum(p[3])){
+      cur = new_token(TK_RESERVED, cur, p, 3);
+      p += 3;
       continue;
     }
 

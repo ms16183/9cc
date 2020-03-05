@@ -12,7 +12,9 @@ int main(int argc, char **argv){
 
   user_input = argv[1];
   token = tokenize();
-  codegen(program());
+  Func *func = program();
+  add_type(func);
+  codegen(func);
 
   return 0;
 }

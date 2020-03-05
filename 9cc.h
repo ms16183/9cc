@@ -28,12 +28,28 @@ struct Token{
 };
 
 /*
+ * 型
+ */
+typedef enum{
+  TP_INT,  // int
+  TP_PTR,  // ポインタ
+  TP_NULL, // NULL
+} TypeKind;
+
+typedef struct Type Type;
+struct Type{
+  TypeKind kind;
+  Type *base;
+};
+
+/*
  * 変数
  */
 typedef struct Var Var;
 struct Var{
   char *name; // 変数名
   int len;    // 変数名の長さ
+  Type *type; // 型
   int offset; // オフセット
 };
 
@@ -48,6 +64,7 @@ struct VarList{
  * ノード
  */
 typedef enum{
+  ND_NULL,      // ノード指定なし
   ND_ADD,       // +
   ND_SUB,       // -
   ND_MUL,       // *
@@ -66,12 +83,15 @@ typedef enum{
   ND_WHILE,     // while
   ND_FOR,       // for
   ND_RETURN,    // return
+  ND_ADDR,      // アドレス
+  ND_DEREF,     // アドレス参照
 } NodeKind;
 
 typedef struct Node Node;
 struct Node{
   NodeKind kind;    // ノードの種類
   Node *next;
+  Node *unary;      // 単項
   Node *lhs;        // 左辺
   Node *rhs;        // 右辺
   Node *cond;       // if, while, for文の条件式
@@ -82,6 +102,7 @@ struct Node{
   Node *block;      // {}の中の複数の式のリスト
   Node *args;       // 関数の引数
   Var *var;         // kind=ND_VARの時の変数
+  Type *type;       // 型
   int val;          // kind=ND_NUMの時の数値
   int offset;       // kind=ND_VARの時のベースポインタからのオフセット
   char *funcname;   // 関数名
@@ -120,6 +141,8 @@ void error(char *fmt, ...);
  * トークナイザ
  */
 
+bool peek(char *op);
+
 // 次のトークンで引数の単語が存在するか否かを返す．
 // もし存在すれば，トークンを1つ進める．
 bool consume(char *op);
@@ -146,6 +169,17 @@ bool check_symbol(char *p, char *q);
 
 // トークナイズを行う．
 Token *tokenize();
+
+/*
+ * 型指定
+ */
+
+// 型を指定する．
+Type *int_type();
+Type *pointer_to(Type *base);
+
+// 全ての関数と変数に対して型を指定する．
+void add_type(Func *func);
 
 /*
  * 構文解析パーサ

@@ -7,14 +7,23 @@ const char *reg[] = {"rdi", "rsi", "rdx", "rcx", "r8", "r9",
                      "r10", "r11", "r12", "r13", "r14", "r15"};
 const int reglen = (int)sizeof(reg)/sizeof(char*);
 
-void generate_val(Node *node){
-  if(node->kind != ND_VAR){
-    error("変数ではありません．\n");
-  }
+void generate(Node *node);
 
-  printf("  lea rax, [rbp-%d]\n", node->var->offset);
-  printf("  push rax\n");
-  return;
+void generate_val(Node *node){
+
+  switch(node->kind){
+    case ND_VAR:
+      printf("  lea rax, [rbp-%d]\n", node->var->offset);
+      printf("  push rax\n");
+      return;
+    case ND_ADDR:
+      return;
+    case ND_DEREF:
+      generate(node->unary);
+      return;
+    default:
+      error("変数ではありません．\n");
+  }
 }
 
 void load(){
@@ -38,6 +47,8 @@ void generate(Node *node){
   int nargs = 0;
 
   switch(node->kind){
+    case ND_NULL:
+      return;
     case ND_NUM:
       printf("  push %d\n", node->val);
       return;
@@ -46,7 +57,7 @@ void generate(Node *node){
       load();
       return;
     case ND_EXPR_STMT:
-      generate(node->lhs);
+      generate(node->unary);
       printf("  add rsp, 8\n");
       return;
     case ND_FUNCALL:
@@ -131,12 +142,17 @@ void generate(Node *node){
       printf(".Lend%03d:\n", label_num_tmp);
       return;
     case ND_RETURN:
-      generate(node->lhs);
+      generate(node->unary);
       printf("  pop rax\n");
       printf("  jmp .Lreturn._%s\n", funcname);
       return;
-    default:
-      break;
+    case ND_ADDR:
+      generate_val(node->unary);
+      return;
+    case ND_DEREF:
+      generate(node->unary);
+      load();
+      return;
   }
 
   // 二項演算子
@@ -149,9 +165,15 @@ void generate(Node *node){
 
   switch(node->kind){
     case ND_ADD:
+      if(node->type->kind == TP_PTR){
+        printf("  imul rdi, 8\n");
+      }
       printf("  add rax, rdi\n");
       break;
     case ND_SUB:
+      if(node->type->kind == TP_PTR){
+        printf("  imul rdi, 8\n");
+      }
       printf("  sub rax, rdi\n");
       break;
     case ND_MUL:
