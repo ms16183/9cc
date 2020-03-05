@@ -50,9 +50,9 @@ char *cpy_nullc(char *name, int len){
   return buf;
 }
 
-Var *push_var(char *name){
-
+Var *push_var(Type *type, char *name){
   Var *new = (Var*)calloc(1, sizeof(Var));
+  new->type = type;
   new->name = name;
   VarList *vl = (VarList*)calloc(1, sizeof(VarList));
   vl->var = new;
@@ -119,6 +119,7 @@ Node *new_node_for(Node *for_init, Node *cond, Node *for_update, Node *then){
 Func *program();
 Func *function();
 Node *stmt();
+Node *declaration();
 Node *expr();
 Node *assign();
 Node *equality();
@@ -141,19 +142,31 @@ Func *program(){
   return head.next;
 }
 
+Type *basetype(){
+  expect("int");
+  Type *type = int_type();
+  // ポインタ型
+  while(consume("*")){
+    type = pointer_to(type);
+  }
+  return type;
+}
+
 VarList *read_func_params(){
   if(consume(")")){
     return NULL;
   }
 
   VarList *head = (VarList*)calloc(1, sizeof(VarList));
-  head->var = push_var(expect_ident());
+  Type *type = basetype();
+  head->var = push_var(type, expect_ident());
   VarList *cur = head;
 
   while(!consume(")")){
     expect(",");
     cur->next = (VarList*)calloc(1, sizeof(VarList));
-    cur->next->var = push_var(expect_ident());
+    type = basetype();
+    cur->next->var = push_var(type, expect_ident());
     cur = cur->next;
   }
   return head;
@@ -162,6 +175,7 @@ VarList *read_func_params(){
 Func *function(){
   locals = NULL;
   Func *f = (Func*)calloc(1, sizeof(Func));
+  basetype();
   f->name = expect_ident();
 
   expect("(");
@@ -263,9 +277,29 @@ Node *stmt(){
     return node;
   }
 
+  if(peek("int")){
+    return declaration();
+  }
+
   node = new_node_unary(ND_EXPR_STMT, expr());
   expect(";");
   return node;
+}
+
+Node *declaration(){
+  Type *type = basetype();
+  Var *var = push_var(type, expect_ident());
+
+  if(consume(";")){
+    return new_node(ND_NULL);
+  }
+
+  expect("=");
+  Node *lhs = new_node_var(var);
+  Node *rhs = expr();
+  expect(";");
+  Node *node = new_node_bin(ND_ASSIGN, lhs, rhs);
+  return new_node_unary(ND_EXPR_STMT, node);
 }
 
 Node *expr(){
@@ -400,10 +434,10 @@ Node *primary(){
     }
     // 変数
     Var *var = find_var(tok);
-    if(!var){
-      var = push_var(cpy_nullc(tok->str, tok->len));
+    if(var){
+      return new_node_var(var);
     }
-    return new_node_var(var);
+    error("定義されていない変数です．");
   }
   // 数値
   return new_node_num(expect_number());

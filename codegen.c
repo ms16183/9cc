@@ -47,6 +47,8 @@ void generate(Node *node){
   int nargs = 0;
 
   switch(node->kind){
+    case ND_NULL:
+      return;
     case ND_NUM:
       printf("  push %d\n", node->val);
       return;
@@ -152,8 +154,6 @@ void generate(Node *node){
       generate(node->unary);
       load();
       return;
-    default:
-      break;
   }
 
   // 二項演算子

@@ -31,8 +31,9 @@ struct Token{
  * 型
  */
 typedef enum{
-  TP_INT, // int
-  TP_PTR, // ポインタ
+  TP_INT,  // int
+  TP_PTR,  // ポインタ
+  TP_NULL, // NULL
 } TypeKind;
 
 typedef struct Type Type;
@@ -48,6 +49,7 @@ typedef struct Var Var;
 struct Var{
   char *name; // 変数名
   int len;    // 変数名の長さ
+  Type *type; // 型
   int offset; // オフセット
 };
 
@@ -62,6 +64,7 @@ struct VarList{
  * ノード
  */
 typedef enum{
+  ND_NULL,      // ノード指定なし
   ND_ADD,       // +
   ND_SUB,       // -
   ND_MUL,       // *
@@ -138,6 +141,8 @@ void error(char *fmt, ...);
  * トークナイザ
  */
 
+bool peek(char *op);
+
 // 次のトークンで引数の単語が存在するか否かを返す．
 // もし存在すれば，トークンを1つ進める．
 bool consume(char *op);
@@ -170,6 +175,10 @@ Token *tokenize();
  */
 
 // 型を指定する．
+Type *int_type();
+Type *pointer_to(Type *base);
+
+// 全ての関数と変数に対して型を指定する．
 void add_type(Func *func);
 
 /*

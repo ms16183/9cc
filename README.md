@@ -46,7 +46,7 @@ hoge = 10 + 2*4 - (9/3);
 ## BNFによる数式生成
 
 - `<var>` 変数`var`
-- `<def> ::= <A>` `def`を`A`と定義する．
+- `<A> ::= <B>` `A`を`B`と定義する．
 - `|` 又は
 - `()` 括弧
 - `"str"` 文字列`str`
@@ -54,29 +54,33 @@ hoge = 10 + 2*4 - (9/3);
 - `?` 直前の文字や変数が0回或いは1回出現する．
 
  ```
-<function> ::= <ident> "(" <params>? ")" "{" <stmt>* "}"
-<params>   ::= <ident> ("," <ident>)*
+<function> ::= <type> <ident> "(" <params>? ")" "{" <stmt>* "}"
+<params>   ::= <type> <ident> ("," <type> <ident>)*
 
-<stmt> ::=   "return" <expr> ";"
-           | "{" <stmt>* "}"
+<stmt> ::=   "{" <stmt>* "}"
            | "if" "(" <expr> ")" <stmt> ("else" <stmt>)?
            | "while" "(" <expr> ")" <stmt>
            | "for" "(" <expr>? ";" <expr>? ";" <expr>? ")" <stmt>
-           | <expr>;
+           | "return" <expr> ";"
+           | <declaration> ";"
+           | <expr> ";"
 
-<expr>       ::= <assign>
-<assign>     ::= <equality> ("=" <assign>)?
-<equality>   ::= <relational> ( "==" <relational> | "!=" <relational>)*
-<relational> ::= <add> ("<" <add> | ">" <add> | "<=" <add> | ">= <add>)*
-<add>        ::= <mul> ("+" <mul> | "-" <mul>)*
-<mul>        ::= <unary> ("+" <unary> | "-" <unary>)*
-<unary>      ::= <primary> | ("+" | "-" | "&" | "*")? <unary>
-<primary>    ::= "(" <expr> ")" | <ident> <func-args>? | <num>
-<func-args>  ::= "(" (<assign> ("," <assign>)*)? ")"
-<num>        ::= <num>? <digit>
-<digit>      ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
-<ident>      ::= (<alphabet> | "_") (<alphabet> | <digit> | "_")*
-<alphabet>   ::= "a" | "b" | ... | "z" | "A" | "B" | ... | "Z"
+<declaration> ::= <type> <ident>("=" <expr>)? ("," <ident>("=" <expr>)?)*
+<expr>        ::= <assign>
+<assign>      ::= <equality> ("=" <assign>)?
+<equality>    ::= <relational> ( "==" <relational> | "!=" <relational>)*
+<relational>  ::= <add> ("<" <add> | ">" <add> | "<=" <add> | ">= <add>)*
+<add>         ::= <mul> ("+" <mul> | "-" <mul>)*
+<mul>         ::= <unary> ("+" <unary> | "-" <unary>)*
+<unary>       ::= <primary> | ("+" | "-" | "&" | "*")? <unary>
+<primary>     ::= "(" <expr> ")" | <ident> <func-args>? | <num>
+<func-args>   ::= "(" (<assign> ("," <assign>)*)? ")"
+<num>         ::= <num>? <digit>
+
+<type>     ::= ("int" | "float") "*"?
+<ident>       ::= (<alphabet> | "_") (<alphabet> | <digit> | "_")*
+<digit>    ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
+<alphabet> ::= "a" | "b" | ... | "z" | "A" | "B" | ... | "Z"
 ```
 
 ```
