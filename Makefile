@@ -1,3 +1,4 @@
+CC=gcc
 CFLAGS=-std=c11 -O3 -march=native -fstack-protector -Wall -g -static
 SRCS=$(wildcard *.c)
 OBJS=$(SRCS:.c=.o)
