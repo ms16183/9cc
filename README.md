@@ -78,7 +78,7 @@ hoge = 10 + 2*4 - (9/3);
 <num>         ::= <num>? <digit>
 
 <type>     ::= ("int" | "float") "*"?
-<ident>       ::= (<alphabet> | "_") (<alphabet> | <digit> | "_")*
+<ident>    ::= (<alphabet> | "_") (<alphabet> | <digit> | "_")*
 <digit>    ::= "0" | "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9"
 <alphabet> ::= "a" | "b" | ... | "z" | "A" | "B" | ... | "Z"
 ```
@@ -99,43 +99,211 @@ hoge = 10 + 2*4 - (9/3);
 
 ## コードジェネレータ
 コードジェネレータは，構文解析器から得た計算順序を基にアセンブリあるいは機械語をジェネレートする．
+今回は，.sという拡張子で，アセンブリを出力する．
+
+最初に，`.intel_syntax noprefix`を宣言する．Intel記法でアセンブリを記述するという意味である．
+次に，構文解析器の情報を基に，各関数を生成する．関数の生成には，`.global <関数名>`という形で
+宣言すればよい．その次に`<関数名>:`で下に命令を記述する．
+
+関数ではローカル変数や引数を保持したり，関数終了後に戻るアドレスを保持する必要がある．
+そのため関数の情報はスタックというデータ構造を用いて管理する．
+スタックは関数毎に必要になるため，スタックの底であるrbpをpushし，前の関数のアドレスを保持する．
+次に，rspの値をrbpにコピーし，スタックのトップがスタックの底になるように移動する．
+最後にrspから変数を保持するために必要な分の領域を減ずる．これはスタックトップが低位の方向に伸びるからである．
+
+反対に，関数が終了する際はrbpの値をrspにコピーし，rbpをポップして元のアドレスに戻る．なお，関数の戻り値は
+raxレジスタに保存されている．
+
+次に，関数で実行される命令を作成する．初めに，2項間で行われる計算を考える．まず，値(整数リテラルや変数の保持する値)はすべてpush命令によってスタックに保持されている．そのためスタックからその値をpopする．pop先は，rdi，raxレジスタである．次にノードの種類を見る．四則演算は簡単である．
+
+- 加算: `add rax, rdi`により`rax+=rdi`が行われる．
+- 減算: `sub rax, rdi`により`rax-=rdi`が行われる．
+- 乗算: `imul rax, rdi`により`rax*=rdi`が行われる．
+- 除算: `idiv rdi`により`rax/=rdi`が行われる．ただしこの命令の前にcqo命令でraxを128bitに伸ばしている．
+
+アセンブリの命令があるため，そのままの実装になる．
+
+続いて，比較演算を考える．手順としては，cmp命令でraxとrdiの値からフラグレジスタを操作する．次にそのフラグレジスタの状態から比較が正しいかをalレジスタにコピーする．
+
+- `cmp rax, rdi`を行い，フラグレジスタを操作する．
+- `==`: `sete al`でフラグを確認し，cmp命令でrax, rdiの値が等しいかの真偽値をalにコピーする．
+- `!=`: `setne al`で同様のことを行う．
+- `<=`: `setle al`で同様のことを行う．
+- `<`: `setl al`で同様のことを行う．
+- `>=`, `>`: 左辺と右辺を交換すればそれぞれ`<=`，`<`と同じである．
+
+最後にraxをpushする．
+
+if, while, forの様な構文も，比較命令とjmp命令で記述できる．
+
+if文では，if文の条件式ノードをアセンブリで記述する．その結果は，前述の四則演算や比較演算の結果である．raxがpushされているので，pop命令でraxをraxに取り出す．次に，cmp命令でそのraxの値と0を比較し条件式が真か否かを確かめる．
+
+```
+// condが真ならばそのまま実行する．
+// condが偽ならLabelに飛ぶ．
+if(cond){
+  ...
+}
+Label:
+```
+
+```
+// condが真ならばそのまま実行し，自動でelse文を飛ばすLabel1に飛ぶ．
+// condが偽ならば自動でelse文の先頭Label2に飛び，そのまま実行する．
+if(cond){
+  ...
+  Label1へ移動する．
+}
+else{
+  Label2:
+  ...
+}
+Label1:
+```
+
+while文もif文と同様に条件式ノードをアセンブリで記述する．
+
+```
+Label1:
+// condが偽ならばループを抜けるためLabel2に飛ぶ．
+while(cond){
+  ...
+
+// 再度condの結果を知るためLabel1に飛ぶ．
+}
+Label2:
+```
+
+for文も同様である．
+
+```
+for( init; cond; update){
+  ...
+}
+
+↓
+init
+while(cond){
+  ...
+  update;
+}
+
+```
+
+と等価であるため同様に記述できる．ただし，for文の初期化，条件式，更新は省略できるので
+トークナイズ時に各式が省略されているか確認し，場合に応じて式をアセンブリにする．
+
+変数を考える．変数はスタックに確保されているので，トークナイズ時のオフセット計算の値を
+用いて，rbpから引き算を行う．その後にlea命令でraxにその変数のアドレスを代入し，
+pushする．次に，ロードを行う．raxにpopして，そのアドレスの値をraxに代入する．
+それをpushする．つまりスタックにあるアドレスをアドレスのさす値に変換している．
 
 例えば
 
 ```
-1+2;
+int main(){int a=3; x2(&a); return a;} int x2(int *n){*n = 2*(*n);return 0;}
 ```
 
-をトークナイズ，構文解析後にコードジェネレータにかけると以下のようになる．
+をアセンブリにする．
 
 ```
 .intel_syntax noprefix
+
 .global main
 
 main:
   push rbp
   mov rbp, rsp
-  sub rsp, 208
-  push 1
-  push 2
+  sub rsp, 8
+  lea rax, [rbp-8]
+  push rax
+  push 3
   pop rdi
   pop rax
-  add rax, rdi
+  mov [rax],  rdi
+  push rdi
+  add rsp, 8
+  lea rax, [rbp-8]
+  push rax
+  pop rdi
+  call x2
+  push rax
+  add rsp, 8
+  lea rax, [rbp-8]
   push rax
   pop rax
+  mov rax, [rax]
+  push rax
+  pop rax
+  jmp .Lreturn.main
+.Lreturn.main:
+  mov rsp, rbp
+  pop rbp
+  ret
+
+.global x2
+
+x2:
+  push rbp
+  mov rbp, rsp
+  sub rsp, 8
+ mov [rbp-8], rdi
+  lea rax, [rbp-8]
+  push rax
+  pop rax
+  mov rax, [rax]
+  push rax
+  push 2
+  lea rax, [rbp-8]
+  push rax
+  pop rax
+  mov rax, [rax]
+  push rax
+  pop rax
+  mov rax, [rax]
+  push rax
+  pop rdi
+  pop rax
+  imul rax, rdi
+  push rax
+  pop rdi
+  pop rax
+  mov [rax],  rdi
+  push rdi
+  add rsp, 8
+  push 0
+  pop rax
+  jmp .Lreturn.x2
+.Lreturn.x2:
   mov rsp, rbp
   pop rbp
   ret
 ```
 
-1. 計算を順序よく行うため，スタックの用意を行う．ここではrbpからrspまで208ビット(=26バイト)の領域を確保している．
-1. 構文解析により，1と2という数字を加算することが分かっている．最初に1と2をスタックにpushする．
-1. 次に各々の数字をpopし，rdiとraxに格納する．
-1. `add`により，加算する．結果はraxに格納されている．
-1. 加算結果はスタックにpushされる．
-1. スタックの位置は元の位置に戻され，rpbの値をpopする．
+最初の行は，`.intel_syntax`ディレクティブによって，Intel形式で記述することを表している．
+これは必須である．
 
-のようにコードを作成する．
+次に，`.global <関数名>`で関数を宣言している．
+
+次に，main関数では
+
+```
+push rbp
+mov rbp, rsp
+sub rsp 8
+```
+
+のように，関数の最初でスタックの確保を行っている．変数は1つしか登場していないので8byte確保されている．
+次に，宣言された変数を代入する．
+
+```
+mov [rbp-8], rdi
+```
+
+として，特定のレジスタに確保した変数を保存する．
+
+
+
 
 ## 翻訳限界
 [C言語の翻訳限界](https://qiita.com/yuki12/items/26994416162b54c811a1)が存在する．

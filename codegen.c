@@ -241,7 +241,7 @@ void codegen(Func *func){
     int i = 0;
     for(VarList *vl = f->params; vl && i < reglen; vl = vl->next, i++){
       Var *var = vl->var;
-      printf(" mov [rbp-%d], %s\n", var->offset, reg[i]);
+      printf("  mov [rbp-%d], %s\n", var->offset, reg[i]);
     }
 
     // ターミネータで区切られたノードを計算する．
